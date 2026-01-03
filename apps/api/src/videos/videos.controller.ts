@@ -4,15 +4,22 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Param,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiSuccessResponse, Video } from '@family-video/shared';
 import { VideosService } from './videos.service';
+import { JellyfinService } from '../jellyfin';
 
 @Controller('videos')
 export class VideosController {
   private readonly logger = new Logger(VideosController.name);
 
-  constructor(private readonly videosService: VideosService) {}
+  constructor(
+    private readonly videosService: VideosService,
+    private readonly jellyfinService: JellyfinService,
+  ) {}
 
   @Get()
   async getAllVideos(): Promise<ApiSuccessResponse<Video[]>> {
@@ -65,5 +72,31 @@ export class VideosController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  /**
+   * Proxy endpoint for video thumbnails
+   * Fetches images from Jellyfin without exposing API key to frontend
+   */
+  @Get(':id/thumbnail')
+  async getThumbnail(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const imageData = await this.jellyfinService.getThumbnailImage(id);
+
+    if (!imageData) {
+      res.status(HttpStatus.NOT_FOUND).send();
+      return;
+    }
+
+    // Set appropriate headers for image response
+    res.set({
+      'Content-Type': 'image/jpeg',
+      'Content-Length': imageData.length,
+      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+    });
+
+    res.send(imageData);
   }
 }

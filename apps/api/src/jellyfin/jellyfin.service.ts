@@ -30,6 +30,9 @@ interface JellyfinUser {
   Name: string;
 }
 
+/** Default timeout for Jellyfin API requests (10 seconds) */
+const FETCH_TIMEOUT_MS = 10000;
+
 @Injectable()
 export class JellyfinService {
   private readonly logger = new Logger(JellyfinService.name);
@@ -52,15 +55,25 @@ export class JellyfinService {
   }
 
   /**
+   * Create an AbortController with timeout for fetch requests
+   */
+  private createTimeoutSignal(timeoutMs: number = FETCH_TIMEOUT_MS): AbortSignal {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), timeoutMs);
+    return controller.signal;
+  }
+
+  /**
    * Get the first user from Jellyfin (for single-user setup)
    */
   async getFirstUserId(): Promise<string> {
     const url = `${this.baseUrl}/Users`;
-    this.logger.debug(`Fetching users from: ${url}`);
+    this.logger.debug('Fetching Jellyfin users');
 
     const response = await fetch(url, {
       method: 'GET',
       headers: this.getHeaders(),
+      signal: this.createTimeoutSignal(),
     });
 
     if (!response.ok) {
@@ -93,11 +106,12 @@ export class JellyfinService {
     });
 
     const url = `${this.baseUrl}/Users/${userId}/Items?${params.toString()}`;
-    this.logger.debug(`Fetching items from: ${url}`);
+    this.logger.debug('Fetching Jellyfin items');
 
     const response = await fetch(url, {
       method: 'GET',
       headers: this.getHeaders(),
+      signal: this.createTimeoutSignal(),
     });
 
     if (!response.ok) {
@@ -112,12 +126,41 @@ export class JellyfinService {
   }
 
   /**
-   * Build thumbnail URL for an item
+   * Build internal thumbnail URL (proxied through our API to protect API key)
+   * Returns a path relative to our API, not the direct Jellyfin URL
    */
   getThumbnailUrl(itemId: string, hasImageTag: boolean): string | undefined {
     if (!hasImageTag) {
       return undefined;
     }
-    return `${this.baseUrl}/Items/${itemId}/Images/Primary?api_key=${this.apiKey}`;
+    // Return URL to our proxy endpoint - API key stays server-side
+    return `/videos/${itemId}/thumbnail`;
+  }
+
+  /**
+   * Fetch thumbnail image data from Jellyfin
+   * Used by the proxy endpoint to serve images without exposing API key
+   */
+  async getThumbnailImage(itemId: string): Promise<Buffer | null> {
+    const url = `${this.baseUrl}/Items/${itemId}/Images/Primary`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+        signal: this.createTimeoutSignal(5000), // 5s timeout for images
+      });
+
+      if (!response.ok) {
+        this.logger.warn(`Failed to fetch thumbnail for ${itemId}: ${response.status}`);
+        return null;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (error) {
+      this.logger.warn(`Error fetching thumbnail for ${itemId}`, error);
+      return null;
+    }
   }
 }

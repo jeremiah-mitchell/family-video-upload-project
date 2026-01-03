@@ -203,13 +203,24 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 1. **JellyfinService** - Uses native fetch API with X-Emby-Token header for authentication. Gets first user ID from /Users endpoint, then fetches items from /Users/{userId}/Items.
 
-2. **Tagged status detection** - Uses fs.existsSync to check for NFO file by replacing video extension with .nfo. This works with the mounted MEDIA_PATH volume.
+2. **Tagged status detection** - Uses fs.existsSync to check for NFO file by replacing video extension with .nfo. Path mapping converts Jellyfin absolute paths to container-relative paths using MEDIA_PATH.
 
 3. **Error handling** - Controller catches errors and maps to appropriate HTTP status codes: 503 for connection errors, 401 for auth errors, 500 for generic errors.
 
-4. **Thumbnail URLs** - Built using Jellyfin's /Items/{id}/Images/Primary endpoint with api_key query param.
+4. **Thumbnail URLs** - Proxied through `/videos/:id/thumbnail` endpoint to avoid exposing API key to frontend (NFR6 compliance).
 
 5. **Type assertion for fetch** - Used `as` type assertions for response.json() since modern TypeScript returns `unknown`.
+
+6. **Request timeouts** - All Jellyfin API requests have 10-second timeout via AbortController (5s for thumbnails).
+
+### Code Review Fixes Applied
+
+| Issue | Severity | Fix Applied |
+|-------|----------|-------------|
+| NFO path mapping broken | HIGH | Added `mapToContainerPath()` to convert Jellyfin paths to MEDIA_PATH-relative paths |
+| API key exposed in thumbnail URLs | HIGH | Created `/videos/:id/thumbnail` proxy endpoint; thumbnail URLs no longer contain API key |
+| No fetch timeout | MEDIUM | Added AbortController with 10s timeout for API calls, 5s for thumbnails |
+| Debug logs expose URLs | MEDIUM | Sanitized log messages to not include full URLs |
 
 ### Change Log
 
@@ -217,16 +228,17 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 |------|--------|--------|
 | 2026-01-03 | Story created with comprehensive Jellyfin API context | SM Agent |
 | 2026-01-03 | Story implemented - all tasks complete | Dev Agent |
+| 2026-01-03 | Code review: Fixed 2 HIGH, 2 MEDIUM issues | Code Review Agent |
 
 ### File List
 
 | File | Action | Description |
 |------|--------|-------------|
-| `apps/api/src/jellyfin/jellyfin.service.ts` | Created | Jellyfin API client with auth and item fetching |
+| `apps/api/src/jellyfin/jellyfin.service.ts` | Created | Jellyfin API client with auth, item fetching, thumbnail proxy, and timeouts |
 | `apps/api/src/jellyfin/jellyfin.module.ts` | Created | Jellyfin module registration |
 | `apps/api/src/jellyfin/index.ts` | Created | Barrel export for jellyfin module |
-| `apps/api/src/videos/videos.service.ts` | Created | Video business logic with tagged status detection |
-| `apps/api/src/videos/videos.controller.ts` | Created | GET /videos endpoint with error handling |
+| `apps/api/src/videos/videos.service.ts` | Created | Video business logic with path mapping and tagged status detection |
+| `apps/api/src/videos/videos.controller.ts` | Created | GET /videos endpoint, thumbnail proxy, error handling |
 | `apps/api/src/videos/videos.module.ts` | Created | Videos module registration |
 | `apps/api/src/videos/index.ts` | Created | Barrel export for videos module |
 | `apps/api/src/app.module.ts` | Modified | Added JellyfinModule and VideosModule imports |
