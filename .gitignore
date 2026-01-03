@@ -17,11 +17,16 @@ out/
 .env.test.local
 .env.production.local
 
-# IDE
+# IDE & Editor
 .idea/
+.vscode/
+.claude/
 *.swp
 *.swo
 *~
+
+# BMAD framework (keep local, only commit _bmad-output/)
+_bmad/
 
 # OS
 .DS_Store
