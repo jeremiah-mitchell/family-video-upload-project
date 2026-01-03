@@ -41,7 +41,7 @@ development_status:
   # Epic 1: Project Foundation & Development Environment
   epic-1: in-progress
   1-1-initialize-monorepo-structure: done
-  1-2-configure-environment-variables: backlog
+  1-2-configure-environment-variables: in-progress
   1-3-docker-compose-deployment: backlog
   epic-1-retrospective: optional
 
