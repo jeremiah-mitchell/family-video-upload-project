@@ -1,6 +1,6 @@
-# Family Video Upload Project
+# Family Video Tagger
 
-Web app to process family home video DVDs (VIDEO_TS folders) on UGREEN NAS: parse chapters from IFO files, split VOBs, encode to MP4, add metadata, and generate Jellyfin-compatible NFO sidecars.
+Metadata tagging webapp for cataloging home videos in Jellyfin.
 
 ## Status
 
@@ -8,28 +8,64 @@ Web app to process family home video DVDs (VIDEO_TS folders) on UGREEN NAS: pars
 
 ## Overview
 
-This app streamlines the workflow for digitizing family home videos from DVD:
+This application provides a simple interface for tagging home videos stored in Jellyfin with metadata like titles, dates, people, and descriptions. Metadata is saved as NFO files alongside the video files.
 
-1. Upload VIDEO_TS folder via web UI
-2. Auto-parse chapters from IFO files
-3. Preview and select chapters to encode
-4. Add metadata (title, date, people, event type)
-5. Background encode to H.264 MP4
-6. Generate Jellyfin NFO sidecars
-7. Output to media library folder
+## Project Structure
 
-## Tech Stack
+```
+/
+├── apps/
+│   ├── web/          # Next.js frontend (App Router)
+│   └── api/          # NestJS backend
+└── packages/
+    └── shared/       # Shared types and Zod schemas
+```
 
-- **Backend**: FastAPI (Python)
-- **Frontend**: Simple HTML/CSS
-- **IFO Parsing**: lsdvd
-- **Encoding**: ffmpeg (H.264)
-- **Queue**: SQLite + background worker
-- **Container**: Docker (Debian base)
+## Prerequisites
+
+- Node.js 20.x LTS
+- npm 10.x
+- Docker & Docker Compose (for deployment)
+- Access to Jellyfin server
 
 ## Development
 
-Documentation and planning artifacts are in the `.bmad/` directory.
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Run frontend
+
+```bash
+npm run dev
+```
+
+### Run backend
+
+```bash
+npm run dev:api
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+- `JELLYFIN_URL` - Jellyfin server URL
+- `JELLYFIN_API_KEY` - Jellyfin API key
+- `MEDIA_PATH` - Path to media files (for NFO writing)
+
+## Tech Stack
+
+- **Frontend:** Next.js 14 (App Router), React, TypeScript, CSS Modules
+- **Backend:** NestJS 10, TypeScript
+- **Monorepo:** npm workspaces
+- **Deployment:** Docker Compose
+
+## Documentation
+
+Planning artifacts are in the `_bmad-output/` directory.
 
 ## License
 
