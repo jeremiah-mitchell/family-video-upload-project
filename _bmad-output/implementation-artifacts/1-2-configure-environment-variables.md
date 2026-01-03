@@ -1,6 +1,6 @@
 # Story 1.2: Configure Environment Variables
 
-Status: in-progress
+Status: done
 
 ## Story
 
