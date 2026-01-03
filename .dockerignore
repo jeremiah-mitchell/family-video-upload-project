@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs (will be rebuilt in container)
+dist/
+**/dist/
+.next/
+**/.next/
+out/
+**/out/
+
+# Git
+.git/
+.gitignore
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files (passed via docker-compose)
+.env
+.env.*
+!.env.example
+
+# BMAD framework
+_bmad/
+_bmad-output/
+
+# Claude
+.claude/
+
+# Testing
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp files
+*.tmp
+temp/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker/
