@@ -1,0 +1,98 @@
+# Workflow Status Template
+
+# This tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "docs/product-brief.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "2026-01-02"
+project: "family-video-upload-project"
+project_type: "webapp"
+selected_track: "method"
+field_type: "greenfield"
+user_description: |
+  Home video digitization and cataloging system with two components:
+  1. Video Extraction Pipeline - Extract videos from ~70-100 DVDs (VOB/IFO + unfinalized disc images), convert to MP4
+  2. Metadata Web App - Simple interface for non-technical family member to add structured metadata (people, location, rating, description) in NFO format for Jellyfin
+  Target library: "Santiago y Armida Productions" on existing Jellyfin/NAS
+  Infrastructure: Docker on Proxmox VM (prod), Mac/Orbstack or Proxmox (dev)
+brainstorm_requested: true
+research_requested: true
+product_brief_requested: true
+workflow_path: "method-greenfield"
+
+# Phase 1: Analysis (Optional - User Selected)
+workflow_status:
+  brainstorm:
+    status: "analysis/brainstorming-session-2026-01-02.md"
+    phase: 1
+    agent: "analyst"
+    command: "/bmad:core:workflows:brainstorming"
+
+  research:
+    status: "planning-artifacts/research/technical-jellyfin-plugin-research-2026-01-02.md"
+    phase: 1
+    agent: "analyst"
+    command: "/bmad:bmm:workflows:research"
+
+  product-brief:
+    status: "planning-artifacts/product-brief-family-video-upload-project-2026-01-02.md"
+    phase: 1
+    agent: "analyst"
+    command: "/bmad:bmm:workflows:create-product-brief"
+
+  # Phase 2: Planning
+  prd:
+    status: "planning-artifacts/prd.md"
+    phase: 2
+    agent: "pm"
+    command: "/bmad:bmm:workflows:create-prd"
+
+  ux-design:
+    status: "planning-artifacts/ux-design-specification.md"
+    phase: 2
+    agent: "ux-designer"
+    command: "/bmad:bmm:workflows:create-ux-design"
+
+  # Phase 3: Solutioning
+  architecture:
+    status: "planning-artifacts/architecture.md"
+    phase: 3
+    agent: "architect"
+    command: "/bmad:bmm:workflows:create-architecture"
+
+  epics-and-stories:
+    status: "planning-artifacts/epics.md"
+    phase: 3
+    agent: "pm"
+    command: "/bmad:bmm:workflows:create-epics-and-stories"
+
+  test-design:
+    status: "optional"
+    phase: 3
+    agent: "tea"
+    command: "/bmad:bmm:workflows:testarch-test-design"
+
+  implementation-readiness:
+    status: "planning-artifacts/implementation-readiness-report-2026-01-02.md"
+    phase: 3
+    agent: "architect"
+    command: "/bmad:bmm:workflows:check-implementation-readiness"
+
+  # Phase 4: Implementation
+  sprint-planning:
+    status: "implementation-artifacts/sprint-status.yaml"
+    phase: 4
+    agent: "sm"
+    command: "/bmad:bmm:workflows:sprint-planning"
+    note: "Creates sprint plan - subsequent work tracked in sprint-status.yaml"
