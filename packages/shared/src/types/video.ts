@@ -10,4 +10,6 @@ export interface Video {
   isTagged: boolean;
   /** Full path to the video file on the server */
   path: string;
+  /** Optional thumbnail URL */
+  thumbnailUrl?: string;
 }

@@ -46,8 +46,8 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Video Discovery
-  epic-2: backlog
-  2-1-jellyfin-api-integration: backlog
+  epic-2: in-progress
+  2-1-jellyfin-api-integration: done
   2-2-video-list-display: backlog
   2-3-tagged-untagged-filtering: backlog
   2-4-video-selection: backlog
