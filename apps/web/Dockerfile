@@ -25,6 +25,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+# Set production environment
+ENV NODE_ENV=production
+
 # Don't run as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

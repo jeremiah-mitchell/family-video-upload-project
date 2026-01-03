@@ -25,6 +25,13 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+# Set production environment
+ENV NODE_ENV=production
+
+# Don't run as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nestjs
+
 # Copy root package files
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
@@ -37,8 +44,13 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 
+# Set ownership
+RUN chown -R nestjs:nodejs /app
+
 # Set working directory to api app
 WORKDIR /app/apps/api
+
+USER nestjs
 
 # Expose API port
 EXPOSE 3001

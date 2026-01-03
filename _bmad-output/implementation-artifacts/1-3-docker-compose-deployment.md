@@ -218,14 +218,20 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 |------|--------|--------|
 | 2026-01-03 | Story created with comprehensive context | SM Agent |
 | 2026-01-03 | Story implemented - all tasks complete | Dev Agent |
+| 2026-01-03 | Code review fixes: NODE_ENV, non-root user, healthcheck, API URL | Code Review |
 
 ### File List
 
 | File | Action | Description |
 |------|--------|-------------|
 | `apps/api/Dockerfile` | Created | Multi-stage Dockerfile for NestJS API with npm workspaces support |
+| `apps/api/src/health/health.controller.ts` | Created | Health endpoint for Docker healthcheck |
+| `apps/api/src/health/health.module.ts` | Created | Health module registration |
+| `apps/api/src/health/index.ts` | Created | Health module barrel export |
+| `apps/api/src/app.module.ts` | Modified | Added HealthModule import |
 | `apps/web/Dockerfile` | Created | Multi-stage Dockerfile for Next.js with standalone output mode |
 | `apps/web/next.config.js` | Modified | Added `output: 'standalone'` for Docker deployment |
 | `apps/web/public/.gitkeep` | Created | Placeholder to ensure public directory exists for Docker build |
-| `docker-compose.yml` | Created | Docker Compose orchestration for web and api services |
+| `docker-compose.yml` | Created | Docker Compose orchestration for web and api services with healthcheck |
 | `.dockerignore` | Created | Excludes node_modules, build outputs, .git, env files from Docker context |
+| `_bmad-output/implementation-artifacts/sprint-status.yaml` | Modified | Updated story status to done |
