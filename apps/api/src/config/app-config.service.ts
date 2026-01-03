@@ -1,0 +1,48 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { EnvConfig } from './env.validation';
+
+/**
+ * Typed configuration service for accessing environment variables
+ * Provides type-safe access to all configuration values
+ */
+@Injectable()
+export class AppConfigService {
+  constructor(private configService: ConfigService<EnvConfig, true>) {}
+
+  /**
+   * Jellyfin server URL
+   */
+  get jellyfinUrl(): string {
+    return this.configService.get('JELLYFIN_URL', { infer: true });
+  }
+
+  /**
+   * Jellyfin API key for authentication
+   * NOTE: Never log this value
+   */
+  get jellyfinApiKey(): string {
+    return this.configService.get('JELLYFIN_API_KEY', { infer: true });
+  }
+
+  /**
+   * Path to media files for NFO writing
+   */
+  get mediaPath(): string {
+    return this.configService.get('MEDIA_PATH', { infer: true });
+  }
+
+  /**
+   * API server port
+   */
+  get port(): number {
+    return this.configService.get('PORT', { infer: true });
+  }
+
+  /**
+   * Frontend URL for CORS configuration
+   */
+  get corsOrigin(): string {
+    return this.configService.get('CORS_ORIGIN', { infer: true });
+  }
+}
