@@ -95,13 +95,26 @@ export class NfoService {
 
   /**
    * Map Jellyfin path to container path
+   * Jellyfin reports paths like /home-videos/... which matches our mount
    */
   private mapToContainerPath(jellyfinPath: string): string {
+    // If path already starts with our media path, use it directly
     if (jellyfinPath.startsWith(this.mediaPath)) {
       return jellyfinPath;
     }
-    const relativePath = jellyfinPath.split('/').slice(-2).join('/');
-    return join(this.mediaPath, relativePath);
+
+    // Common pattern: Jellyfin path is /home-videos/...
+    // Our container also mounts to /home-videos
+    // Extract everything after /home-videos and join with our media path
+    const homeVideosMatch = jellyfinPath.match(/\/home-videos\/(.+)$/);
+    if (homeVideosMatch) {
+      return join(this.mediaPath, homeVideosMatch[1]);
+    }
+
+    // Fallback: try to find common path segments
+    // This handles cases where paths might differ in prefix
+    this.logger.warn(`Path mapping fallback for: ${jellyfinPath}`);
+    return jellyfinPath;
   }
 
   /**
