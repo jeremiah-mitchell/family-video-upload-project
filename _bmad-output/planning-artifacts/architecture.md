@@ -387,9 +387,13 @@ family-video-upload-project/
 ### Architectural Boundaries
 
 **API Endpoints:**
-- `GET /videos` - List all videos (from Jellyfin API)
+- `GET /videos` - List all videos from Home Videos library (from Jellyfin API)
 - `GET /videos/:id` - Get single video details
-- `PUT /videos/:id/metadata` - Save metadata (writes NFO file)
+- `GET /videos/:id/metadata` - Get existing metadata for a video
+- `POST /videos/:id/metadata` - Save metadata (writes NFO file)
+- `GET /videos/:id/thumbnail` - Proxy thumbnail image from Jellyfin
+- `GET /videos/config` - Get Jellyfin URL for frontend
+- `GET /now-playing` - Get currently playing video for configured user (Jellyfin Sessions API)
 
 **Data Flow:**
 1. Frontend fetches video list from API
@@ -400,8 +404,12 @@ family-video-upload-project/
 6. Frontend displays confirmation toast
 
 **External Integrations:**
-- Jellyfin REST API (read video library)
+- Jellyfin REST API (read video library, Sessions API for Now Playing)
 - NAS filesystem (write NFO files via mounted volume)
+
+**Frontend Routes:**
+- `/` - Main tagging page (video list + form)
+- `/upload` - Upload page stub (placeholder for future functionality)
 
 ## Architecture Validation
 

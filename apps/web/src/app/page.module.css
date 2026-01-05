@@ -1,0 +1,109 @@
+.main {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: var(--spacing-lg);
+  height: 100vh;
+  padding: var(--spacing-lg);
+  box-sizing: border-box;
+}
+
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panelHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.panelHeader {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-primary, #0066cc);
+  background-color: transparent;
+  border: 1px solid var(--color-primary, #0066cc);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.addButton:hover {
+  background-color: var(--color-primary, #0066cc);
+  color: white;
+}
+
+.addButton:focus {
+  outline: 2px solid var(--color-primary, #0066cc);
+  outline-offset: 2px;
+}
+
+.panelContent {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.videoListWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.progressCounter {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  background-color: var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* Responsive: single column on mobile */
+@media (max-width: 768px) {
+  .main {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .leftPanel,
+  .rightPanel {
+    height: auto;
+    min-height: 400px;
+  }
+}

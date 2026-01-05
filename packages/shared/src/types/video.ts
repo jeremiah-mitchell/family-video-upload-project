@@ -13,3 +13,15 @@ export interface Video {
   /** Optional thumbnail URL */
   thumbnailUrl?: string;
 }
+
+/**
+ * Represents the currently playing video for a user
+ */
+export interface NowPlayingVideo {
+  /** Jellyfin item ID */
+  id: string;
+  /** Video title/name */
+  name: string;
+  /** Optional thumbnail URL */
+  thumbnailUrl?: string;
+}

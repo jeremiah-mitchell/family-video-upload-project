@@ -473,3 +473,52 @@ So that **I know the issue is with the connection, not my work**.
 **Then** a clear error message appears: "Could not connect to Jellyfin. Check your connection."
 **And** the interface remains responsive (not frozen)
 **And** when Jellyfin becomes available again, I can refresh and continue
+
+---
+
+## Epic 6: Usability Enhancements
+
+Pre-production enhancements to improve the tagging workflow before Santiago begins using the app.
+
+### Story 6.1: Filter to Home Videos Library
+
+As **Santiago**,
+I want **to only see videos from the Home Videos library**,
+So that **I don't see TV shows and movies that already have metadata**.
+
+**Acceptance Criteria:**
+
+**Given** the webapp is loaded
+**When** the video list populates
+**Then** only videos from the "Home Videos" Jellyfin library are displayed
+**And** TV shows, movies, and other libraries are not shown
+**And** the filter is hardcoded (no UI toggle needed for MVP)
+
+### Story 6.2: Now Playing Indicator
+
+As **Santiago**,
+I want **to see what video is currently playing on any of my devices**,
+So that **I can tag a video I'm watching on my TV from my laptop**.
+
+**Acceptance Criteria:**
+
+**Given** a video is playing in Jellyfin (on any device for the configured user)
+**When** I view the webapp
+**Then** a "Now Playing" section appears above the video list
+**And** it shows the currently playing video's title and thumbnail
+**And** clicking on it selects that video in the list and loads its metadata form
+**And** if nothing is playing, the "Now Playing" section is hidden or shows "Nothing playing"
+
+### Story 6.3: Upload Page Stub
+
+As **Jeremiah**,
+I want **a placeholder upload page**,
+So that **the UI structure is ready for future video upload functionality**.
+
+**Acceptance Criteria:**
+
+**Given** the webapp is loaded
+**When** I click the "+ Add Video" button in the left panel header
+**Then** I am navigated to an upload page
+**And** the page displays a "Coming Soon" placeholder message
+**And** I can navigate back to the main tagging view

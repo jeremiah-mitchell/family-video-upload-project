@@ -33,6 +33,11 @@ export const envSchema = z.object({
     .string()
     .default('http://localhost:3000')
     .describe('Frontend URL for CORS'),
+
+  JELLYFIN_USER: z
+    .string()
+    .default('jeremiah')
+    .describe('Jellyfin username for Now Playing feature'),
 });
 
 /**

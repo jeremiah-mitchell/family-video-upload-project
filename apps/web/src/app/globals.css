@@ -1,4 +1,25 @@
 /* Global styles - using system font stack as per architecture */
+
+:root {
+  /* Colors */
+  --color-primary: #007bff;
+  --color-primary-dark: #0056b3;
+  --color-background: #f8f9fa;
+  --color-border: #e9ecef;
+  --color-text: #212529;
+  --color-text-muted: #6c757d;
+  --color-error: #dc3545;
+  --color-white: #ffffff;
+
+  /* Spacing */
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+
+  /* Border radius */
+  --radius-md: 8px;
+}
+
 * {
   box-sizing: border-box;
   padding: 0;

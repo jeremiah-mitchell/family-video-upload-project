@@ -49,31 +49,67 @@ Single page with two-column layout (desktop):
 ┌─────────────────────────────────────────────────────────────┐
 │  Family Video Tagger                                        │
 ├─────────────────────────────┬───────────────────────────────┤
+│  Videos        [+ Add Video]│                               │
+│                             │  TAGGING FORM                 │
+│  ▶ NOW PLAYING             │                               │
+│  ┌─────────────────────────┐│  Title: [________________]    │
+│  │ 🎬 Birthday Party 2003  ││                               │
+│  └─────────────────────────┘│  Date:  [____-__-__]         │
 │                             │                               │
-│  VIDEO LIST                 │  TAGGING FORM                 │
+│  VIDEO LIST                 │  People: [Select people ▼]    │
 │                             │                               │
-│  ☐ video_001.mp4           │  Title: [________________]    │
+│  ☐ video_001.mp4           │  Rating: [1-10 slider/select] │
 │  ☐ video_002.mp4           │                               │
-│  ● video_003.mp4  ← selected│  Date:  [____-__-__]         │
-│  ☐ video_004.mp4           │                               │
-│  ☐ video_005.mp4           │  People: [Select people ▼]    │
+│  ● video_003.mp4  ← selected│  Description:                 │
+│  ☐ video_004.mp4           │  [                    ]       │
+│  ☐ video_005.mp4           │  [                    ]       │
 │  ...                        │                               │
-│                             │  Rating: [1-10 slider/select] │
-│  [Show: Untagged ▼]        │                               │
-│                             │  Description:                 │
-│                             │  [                    ]       │
-│                             │  [                    ]       │
-│                             │                               │
 │                             │  [Watch in Jellyfin]  [Save]  │
-│                             │                               │
+│  [Show: Untagged ▼]        │                               │
 ├─────────────────────────────┴───────────────────────────────┤
 │  Tagged: 0 / 1,500                                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Upload Page (Stub)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Family Video Tagger                                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│                    📤 Upload Videos                         │
+│                                                             │
+│                    Coming Soon                              │
+│                                                             │
+│              Video upload functionality will be             │
+│              available in a future update.                  │
+│                                                             │
+│                    [← Back to Tagging]                      │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## UI Components
+
+### Left Panel Header
+
+| Element | Implementation |
+|---------|----------------|
+| Title | "Videos" label |
+| Add button | "+ Add Video" button, navigates to /upload page |
+
+### Now Playing Section
+
+| Element | Implementation |
+|---------|----------------|
+| Container | Appears above video list when video is playing |
+| Visibility | Hidden when nothing playing, shows "Nothing playing" or video info |
+| Content | Video title, thumbnail |
+| Interaction | Clicking selects that video and loads its form |
+| Polling | Refresh every 5-10 seconds to detect playback changes |
 
 ### Video List (Left Panel)
 
@@ -83,6 +119,7 @@ Single page with two-column layout (desktop):
 | Selection | Click to select, highlight selected row |
 | Tagged indicator | Checkmark or different color for tagged videos |
 | Filter | Dropdown: "Untagged" / "Tagged" / "All" |
+| Library filter | Hardcoded to "Home Videos" library only |
 
 ### Tagging Form (Right Panel)
 

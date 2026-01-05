@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { existsSync } from 'fs';
 import { join, dirname, basename, extname } from 'path';
-import { Video } from '@family-video/shared';
+import { Video, VideoMetadata } from '@family-video/shared';
 import { JellyfinService } from '../jellyfin';
 import { AppConfigService } from '../config';
+import { NfoService } from '../nfo';
 
 @Injectable()
 export class VideosService {
@@ -13,6 +14,7 @@ export class VideosService {
   constructor(
     private readonly jellyfinService: JellyfinService,
     private readonly configService: AppConfigService,
+    private readonly nfoService: NfoService,
   ) {
     this.mediaPath = this.configService.mediaPath;
   }
@@ -99,5 +101,73 @@ export class VideosService {
     const mappedPath = join(this.mediaPath, relativePath);
 
     return mappedPath;
+  }
+
+  /**
+   * Get a single video by ID
+   */
+  async getVideoById(id: string): Promise<Video | null> {
+    const item = await this.jellyfinService.getItem(id);
+    if (!item) {
+      return null;
+    }
+
+    const path = item.Path || '';
+    const isTagged = this.checkIfTagged(path);
+    const hasImage = !!item.ImageTags?.Primary;
+
+    return {
+      id: item.Id,
+      filename: item.Name,
+      path,
+      isTagged,
+      thumbnailUrl: this.jellyfinService.getThumbnailUrl(item.Id, hasImage),
+    };
+  }
+
+  /**
+   * Get existing metadata for a video from its NFO file
+   */
+  async getVideoMetadata(id: string): Promise<VideoMetadata | null> {
+    const video = await this.getVideoById(id);
+    if (!video) {
+      throw new NotFoundException(`Video not found: ${id}`);
+    }
+
+    return this.nfoService.readNfo(video.path);
+  }
+
+  /**
+   * Save metadata for a video to an NFO file
+   */
+  async saveVideoMetadata(
+    id: string,
+    metadata: VideoMetadata,
+  ): Promise<Video> {
+    const video = await this.getVideoById(id);
+    if (!video) {
+      throw new NotFoundException(`Video not found: ${id}`);
+    }
+
+    // Write NFO file
+    await this.nfoService.writeNfo(video.path, metadata);
+
+    // Trigger Jellyfin library refresh (best-effort, non-blocking)
+    this.jellyfinService.refreshLibrary().catch((err) => {
+      this.logger.warn('Failed to trigger library refresh', err);
+    });
+
+    // Return updated video (now tagged)
+    return {
+      ...video,
+      isTagged: true,
+    };
+  }
+
+  /**
+   * Get Jellyfin base URL for constructing web player links
+   */
+  getJellyfinUrl(): string {
+    return this.jellyfinService.getBaseUrl();
   }
 }

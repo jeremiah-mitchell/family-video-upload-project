@@ -45,4 +45,11 @@ export class AppConfigService {
   get corsOrigin(): string {
     return this.configService.get('CORS_ORIGIN', { infer: true });
   }
+
+  /**
+   * Jellyfin username for Now Playing feature
+   */
+  get jellyfinUser(): string {
+    return this.configService.get('JELLYFIN_USER', { infer: true });
+  }
 }

@@ -46,34 +46,41 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Video Discovery
-  epic-2: in-progress
+  epic-2: done
   2-1-jellyfin-api-integration: done
-  2-2-video-list-display: backlog
-  2-3-tagged-untagged-filtering: backlog
-  2-4-video-selection: backlog
+  2-2-video-list-display: done
+  2-3-tagged-untagged-filtering: done
+  2-4-video-selection: done
   epic-2-retrospective: optional
 
   # Epic 3: Video Tagging Workflow
-  epic-3: backlog
-  3-1-watch-in-jellyfin: backlog
-  3-2-metadata-entry-form: backlog
-  3-3-people-selection: backlog
-  3-4-load-existing-metadata: backlog
+  epic-3: done
+  3-1-watch-in-jellyfin: done
+  3-2-metadata-entry-form: done
+  3-3-people-selection: done
+  3-4-load-existing-metadata: done
   epic-3-retrospective: optional
 
   # Epic 4: Save & Persistence
-  epic-4: backlog
-  4-1-nfo-file-generation: backlog
-  4-2-save-metadata: backlog
-  4-3-jellyfin-library-refresh: backlog
-  4-4-save-confirmation-toast: backlog
-  4-5-form-state-preservation-on-failure: backlog
+  epic-4: done
+  4-1-nfo-file-generation: done
+  4-2-save-metadata: done
+  4-3-jellyfin-library-refresh: done
+  4-4-save-confirmation-toast: done
+  4-5-form-state-preservation-on-failure: done
   epic-4-retrospective: optional
 
   # Epic 5: Error Handling & Resilience
-  epic-5: backlog
-  5-1-save-error-display: backlog
-  5-2-retry-save: backlog
-  5-3-skip-problematic-video: backlog
-  5-4-jellyfin-unavailable-handling: backlog
+  epic-5: done
+  5-1-save-error-display: done
+  5-2-retry-save: done
+  5-3-skip-problematic-video: done
+  5-4-jellyfin-unavailable-handling: done
   epic-5-retrospective: optional
+
+  # Epic 6: Usability Enhancements
+  epic-6: done
+  6-1-filter-home-videos-library: done
+  6-2-now-playing-indicator: done
+  6-3-upload-page-stub: done
+  epic-6-retrospective: optional
