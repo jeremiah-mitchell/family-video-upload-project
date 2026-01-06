@@ -27,3 +27,45 @@ export interface NowPlayingVideo {
   /** Optional thumbnail URL */
   thumbnailUrl?: string;
 }
+
+/**
+ * Response from a successful video upload
+ */
+export interface UploadResult {
+  /** Filename of the uploaded video */
+  filename: string;
+  /** Size in bytes */
+  size: number;
+  /** MIME type */
+  mimeType: string;
+}
+
+/**
+ * Progress update during DVD extraction
+ */
+export interface DvdExtractionProgress {
+  /** Current status */
+  status: 'analyzing' | 'extracting' | 'complete' | 'error';
+  /** Total number of chapters */
+  totalChapters?: number;
+  /** Current chapter being extracted */
+  currentChapter?: number;
+  /** Current chapter filename */
+  currentFilename?: string;
+  /** Error message if status is 'error' */
+  error?: string;
+  /** List of extracted files when complete */
+  extractedFiles?: string[];
+}
+
+/**
+ * DVD chapter information parsed from IFO files
+ */
+export interface DvdChapter {
+  /** Chapter index (1-based) */
+  index: number;
+  /** Duration in seconds */
+  duration: number;
+  /** Start time in seconds */
+  startTime: number;
+}

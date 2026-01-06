@@ -1,4 +1,4 @@
-import type { Video, VideoMetadata, ApiSuccessResponse, ApiErrorResponse, NowPlayingVideo } from '@family-video/shared';
+import type { Video, VideoMetadata, ApiSuccessResponse, ApiErrorResponse, NowPlayingVideo, UploadResult } from '@family-video/shared';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -196,4 +196,226 @@ export async function getNowPlaying(): Promise<NowPlayingVideo | null> {
 
   const data = await response.json() as ApiSuccessResponse<NowPlayingVideo | null>;
   return data.data;
+}
+
+/**
+ * Upload configuration response
+ */
+export interface UploadConfigResponse {
+  maxSizeMb: number;
+  supportedTypes: string[];
+}
+
+/**
+ * Get upload configuration from the API
+ */
+export async function getUploadConfig(): Promise<UploadConfigResponse> {
+  const response = await fetch(`${API_BASE}/upload/config`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    signal: createTimeoutSignal(),
+  });
+
+  if (!response.ok) {
+    throw new ApiError(
+      'Failed to get upload configuration',
+      `Server returned ${response.status}`,
+      response.status
+    );
+  }
+
+  const data = await response.json() as ApiSuccessResponse<UploadConfigResponse>;
+  return data.data;
+}
+
+/**
+ * Upload a video file with progress tracking
+ * @param file The file to upload
+ * @param onProgress Callback for upload progress (0-100)
+ * @returns Upload result with filename
+ */
+export async function uploadVideo(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<UploadResult> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText) as ApiSuccessResponse<UploadResult>;
+          resolve(response.data);
+        } catch {
+          reject(new ApiError('Invalid response from server'));
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText) as ApiErrorResponse;
+          reject(new ApiError(errorData.error || 'Upload failed', errorData.details, xhr.status));
+        } catch {
+          reject(new ApiError('Upload failed', `Server returned ${xhr.status}`, xhr.status));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new ApiError('Network error during upload'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new ApiError('Upload cancelled'));
+    });
+
+    xhr.addEventListener('timeout', () => {
+      reject(new ApiError('Upload timed out'));
+    });
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Send request
+    xhr.open('POST', `${API_BASE}/upload/video`);
+    xhr.timeout = 600000; // 10 minute timeout for large files
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Upload a DVD ZIP file and extract chapters
+ * @param file The ZIP file containing VIDEO_TS
+ * @param onProgress Callback for upload progress (0-100)
+ * @returns Array of extracted filenames
+ */
+export async function uploadDvd(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText) as ApiSuccessResponse<{ extractedFiles: string[] }>;
+          resolve(response.data.extractedFiles);
+        } catch {
+          reject(new ApiError('Invalid response from server'));
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText) as ApiErrorResponse;
+          reject(new ApiError(errorData.error || 'DVD upload failed', errorData.details, xhr.status));
+        } catch {
+          reject(new ApiError('DVD upload failed', `Server returned ${xhr.status}`, xhr.status));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new ApiError('Network error during upload'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new ApiError('Upload cancelled'));
+    });
+
+    xhr.addEventListener('timeout', () => {
+      reject(new ApiError('Upload timed out'));
+    });
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Send request
+    xhr.open('POST', `${API_BASE}/upload/dvd`);
+    xhr.timeout = 1800000; // 30 minute timeout for DVD processing
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Upload a DVD VIDEO_TS folder and extract chapters
+ * @param files Array of files from the VIDEO_TS folder
+ * @param folderName Name of the folder being uploaded
+ * @param onProgress Callback for upload progress (0-100)
+ * @returns Array of extracted filenames
+ */
+export async function uploadDvdFolder(
+  files: File[],
+  folderName: string,
+  onProgress?: (progress: number) => void
+): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText) as ApiSuccessResponse<{ extractedFiles: string[] }>;
+          resolve(response.data.extractedFiles);
+        } catch {
+          reject(new ApiError('Invalid response from server'));
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText) as ApiErrorResponse;
+          reject(new ApiError(errorData.error || 'DVD folder upload failed', errorData.details, xhr.status));
+        } catch {
+          reject(new ApiError('DVD folder upload failed', `Server returned ${xhr.status}`, xhr.status));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new ApiError('Network error during upload'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new ApiError('Upload cancelled'));
+    });
+
+    xhr.addEventListener('timeout', () => {
+      reject(new ApiError('Upload timed out'));
+    });
+
+    // Create form data with all files
+    const formData = new FormData();
+    for (const file of files) {
+      // Use webkitRelativePath if available, otherwise just the filename
+      const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+      formData.append('files', file, relativePath);
+    }
+    formData.append('folderName', folderName);
+
+    // Send request
+    xhr.open('POST', `${API_BASE}/upload/dvd-folder`);
+    xhr.timeout = 1800000; // 30 minute timeout for DVD processing
+    xhr.send(formData);
+  });
 }

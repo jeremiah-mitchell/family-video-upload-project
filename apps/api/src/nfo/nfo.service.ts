@@ -102,7 +102,8 @@ export class NfoService {
 
   /**
    * Map Jellyfin path to container path
-   * Jellyfin reports paths like /home-videos/... which matches our mount
+   * Jellyfin reports absolute paths from its perspective (e.g., /home-videos/file.mp4)
+   * We need to map these to our container's MEDIA_PATH
    */
   private mapToContainerPath(jellyfinPath: string): string {
     // If path already starts with our media path, use it directly
@@ -116,24 +117,63 @@ export class NfoService {
       return resolved;
     }
 
-    // Common pattern: Jellyfin path is /home-videos/...
-    // Our container also mounts to /home-videos
-    // Extract everything after /home-videos and join with our media path
-    const homeVideosMatch = jellyfinPath.match(/\/home-videos\/(.+)$/);
-    if (homeVideosMatch) {
-      const resolved = resolve(this.mediaPath, homeVideosMatch[1]);
+    // Extract the filename from Jellyfin's path and use it under our MEDIA_PATH
+    // This handles cases where:
+    // - Jellyfin path: /home-videos/Bouquet Toss.mp4
+    // - Our MEDIA_PATH: /media
+    // - Result: /media/Bouquet Toss.mp4
+    //
+    // Also handles subdirectories:
+    // - Jellyfin path: /home-videos/2024/Christmas.mp4
+    // - Result: /media/2024/Christmas.mp4
+    const jellyfinFilename = basename(jellyfinPath);
+    const jellyfinDir = dirname(jellyfinPath);
+    const jellyfinParentDir = basename(jellyfinDir);
+
+    // Check if file exists directly under MEDIA_PATH (flat structure)
+    const flatPath = join(this.mediaPath, jellyfinFilename);
+    if (existsSync(flatPath) || existsSync(flatPath.replace(/\.[^/.]+$/, '.nfo'))) {
+      const resolved = resolve(flatPath);
+      if (!resolved.startsWith(resolve(this.mediaPath))) {
+        this.logger.error(`Path traversal attempt detected: ${jellyfinPath}`);
+        throw new Error('Invalid path');
+      }
+      this.logger.debug(`Mapped path (flat): ${jellyfinPath} -> ${resolved}`);
+      return resolved;
+    }
+
+    // Try with parent directory preserved (for nested structure)
+    // e.g., /home-videos/2024/file.mp4 -> /media/2024/file.mp4
+    const nestedPath = join(this.mediaPath, jellyfinParentDir, jellyfinFilename);
+    if (existsSync(nestedPath) || existsSync(nestedPath.replace(/\.[^/.]+$/, '.nfo'))) {
+      const resolved = resolve(nestedPath);
+      if (!resolved.startsWith(resolve(this.mediaPath))) {
+        this.logger.error(`Path traversal attempt detected: ${jellyfinPath}`);
+        throw new Error('Invalid path');
+      }
+      this.logger.debug(`Mapped path (nested): ${jellyfinPath} -> ${resolved}`);
+      return resolved;
+    }
+
+    // Common pattern: Jellyfin path starts with a known library prefix
+    // Extract everything after the first directory component and join with MEDIA_PATH
+    const pathParts = jellyfinPath.split('/').filter(Boolean);
+    if (pathParts.length >= 2) {
+      // Skip the first component (library root) and use the rest
+      const relativePath = pathParts.slice(1).join('/');
+      const resolved = resolve(this.mediaPath, relativePath);
       // Verify path stays within media path (prevent path traversal)
       if (!resolved.startsWith(resolve(this.mediaPath))) {
         this.logger.error(`Path traversal attempt detected: ${jellyfinPath}`);
         throw new Error('Invalid path');
       }
+      this.logger.debug(`Mapped path (relative): ${jellyfinPath} -> ${resolved}`);
       return resolved;
     }
 
-    // Fallback: try to find common path segments
-    // This handles cases where paths might differ in prefix
-    this.logger.warn(`Path mapping fallback for: ${jellyfinPath}`);
-    return jellyfinPath;
+    // Fallback: use filename directly under MEDIA_PATH
+    this.logger.warn(`Path mapping fallback for: ${jellyfinPath} -> ${flatPath}`);
+    return flatPath;
   }
 
   /**

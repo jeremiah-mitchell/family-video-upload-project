@@ -117,19 +117,32 @@ export class VideosService {
       return jellyfinPath;
     }
 
-    // Extract filename and try to construct path under MEDIA_PATH
-    // This handles cases where Jellyfin path is /mnt/NAS/Videos/sub/file.mp4
-    // and container has /media mounted to the same content
-    const filename = basename(jellyfinPath);
-    const parentDir = basename(dirname(jellyfinPath));
+    // Extract filename from Jellyfin's path
+    const jellyfinFilename = basename(jellyfinPath);
 
-    // Try to find the file by walking up and matching structure
-    // For simplicity in MVP, we use the filename directly under mediaPath subdirectories
-    // This is a best-effort mapping - in production, consider storing path mappings
-    const relativePath = jellyfinPath.split('/').slice(-2).join('/');
-    const mappedPath = join(this.mediaPath, relativePath);
+    // Check if file exists directly under MEDIA_PATH (flat structure)
+    const flatPath = join(this.mediaPath, jellyfinFilename);
+    if (existsSync(flatPath) || existsSync(flatPath.replace(/\.[^/.]+$/, '.nfo'))) {
+      return flatPath;
+    }
 
-    return mappedPath;
+    // Try with parent directory preserved (for nested structure)
+    const jellyfinDir = dirname(jellyfinPath);
+    const jellyfinParentDir = basename(jellyfinDir);
+    const nestedPath = join(this.mediaPath, jellyfinParentDir, jellyfinFilename);
+    if (existsSync(nestedPath) || existsSync(nestedPath.replace(/\.[^/.]+$/, '.nfo'))) {
+      return nestedPath;
+    }
+
+    // Common pattern: Skip the first directory component (library root) and use the rest
+    const pathParts = jellyfinPath.split('/').filter(Boolean);
+    if (pathParts.length >= 2) {
+      const relativePath = pathParts.slice(1).join('/');
+      return join(this.mediaPath, relativePath);
+    }
+
+    // Fallback: use filename directly under MEDIA_PATH
+    return flatPath;
   }
 
   /**
@@ -178,13 +191,24 @@ export class VideosService {
       throw new NotFoundException(`Video not found: ${id}`);
     }
 
-    // Write NFO file
+    // Write NFO file (for persistence/backup)
     await this.nfoService.writeNfo(video.path, metadata);
 
-    // Trigger Jellyfin library refresh (best-effort, non-blocking)
-    this.jellyfinService.refreshLibrary().catch((err) => {
-      this.logger.warn('Failed to trigger library refresh', err);
-    });
+    // Update Jellyfin metadata directly via API
+    // This bypasses NFO refresh issues in Jellyfin 10.9+
+    // NFO file is still written for backup/portability
+    this.jellyfinService
+      .updateItemMetadata(id, {
+        title: metadata.title,
+        date: metadata.date,
+        description: metadata.description,
+        tags: metadata.tags,
+        people: metadata.people,
+        rating: metadata.rating,
+      })
+      .catch((err) => {
+        this.logger.warn(`Failed to update Jellyfin metadata for ${id}`, err);
+      });
 
     // Return updated video (now tagged)
     return {

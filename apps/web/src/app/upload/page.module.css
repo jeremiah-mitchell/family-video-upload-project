@@ -1,66 +1,402 @@
+/* Upload page - matches main page styling */
+
 .main {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   min-height: 100vh;
   padding: var(--spacing-lg);
   box-sizing: border-box;
 }
 
-.container {
-  text-align: center;
-  max-width: 400px;
-  padding: var(--spacing-xl);
-  background-color: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.icon {
-  font-size: 3rem;
-  margin-bottom: var(--spacing-md);
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.message {
   font-size: 1.25rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.description {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-lg) 0;
-  line-height: 1.5;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text);
 }
 
 .backLink {
-  display: inline-block;
-  padding: var(--spacing-sm) var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs, 4px) var(--spacing-sm);
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-primary, #0066cc);
+  color: var(--color-primary);
   background-color: transparent;
-  border: 1px solid var(--color-primary, #0066cc);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
   text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .backLink:hover {
-  background-color: var(--color-primary, #0066cc);
+  background-color: var(--color-primary);
   color: white;
 }
 
-.backLink:focus {
-  outline: 2px solid var(--color-primary, #0066cc);
-  outline-offset: 2px;
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Upload Type Toggle */
+.uploadTypeToggle {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding: 4px;
+  background-color: var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.uploadTypeButton {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.uploadTypeButton:hover {
+  color: var(--color-text);
+}
+
+.uploadTypeButtonActive {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Panel container */
+.panel {
+  background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-lg);
+  flex: 1;
+}
+
+/* Drop Zone */
+.dropZone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg) var(--spacing-md);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropZone:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(0, 123, 255, 0.02);
+}
+
+.dropZoneDragOver {
+  border-color: var(--color-primary);
+  background-color: rgba(0, 123, 255, 0.05);
+  border-style: solid;
+}
+
+.dropZoneDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropZoneDisabled:hover {
+  border-color: var(--color-border);
+  background-color: transparent;
+}
+
+.dropIcon {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.6;
+}
+
+.dropText {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.dropSubtext {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.fileInput {
+  display: none;
+}
+
+/* Selected File */
+.selectedFile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.fileIcon {
+  font-size: 1.5rem;
+  opacity: 0.7;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin: 0 0 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.removeButton {
+  padding: var(--spacing-sm);
+  font-size: 1.25rem;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.removeButton:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--color-error);
+}
+
+/* Progress Bar */
+.progressContainer {
+  margin-bottom: var(--spacing-lg);
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.progressText {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.progressPercent {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.progressBar {
+  height: 8px;
+  background-color: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.uploadButton {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.uploadButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.uploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Success State */
+.successState {
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.successIcon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.successTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #28a745;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.successMessage {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.successActions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.tagButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.tagButton:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.uploadAnotherButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.uploadAnotherButton:hover {
+  background-color: var(--color-border);
+}
+
+/* Error State */
+.errorMessage {
+  padding: var(--spacing-md);
+  background-color: rgba(220, 53, 69, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.errorText {
+  font-size: 0.875rem;
+  color: var(--color-error);
+  margin: 0;
+}
+
+.errorDetails {
+  font-size: 0.75rem;
+  color: var(--color-error);
+  opacity: 0.8;
+  margin: 4px 0 0 0;
+}
+
+/* DVD Extraction Results */
+.extractedFiles {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-border);
+  border-radius: var(--radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.extractedFilesTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.extractedFilesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.extractedFileItem {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-background);
+}
+
+.extractedFileItem:last-child {
+  border-bottom: none;
+}
+
+/* Folder info */
+.folderInfo {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-sm);
 }
