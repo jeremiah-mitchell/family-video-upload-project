@@ -235,3 +235,84 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 | `docker-compose.yml` | Created | Docker Compose orchestration for web and api services with healthcheck |
 | `.dockerignore` | Created | Excludes node_modules, build outputs, .git, env files from Docker context |
 | `_bmad-output/implementation-artifacts/sprint-status.yaml` | Modified | Updated story status to done |
+
+## Production Deployment Strategy
+
+### Image Registry
+
+Production images are hosted on GitHub Container Registry (GHCR):
+- `ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest`
+- `ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest`
+
+### Building and Pushing Images
+
+From the project root on a development machine:
+
+```bash
+# Ensure logged into GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u jeremiah-mitchell --password-stdin
+
+# Build and push API image
+docker build -f apps/api/Dockerfile -t ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest .
+docker push ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest
+
+# Build and push Web image
+docker build -f apps/web/Dockerfile -t ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest .
+docker push ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest
+```
+
+### NAS Deployment (Portainer)
+
+The production deployment runs on UGREEN NAS via Portainer with pre-built images from GHCR.
+
+**Portainer Stack Configuration:**
+```yaml
+services:
+  api:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest
+    user: "0:0"  # Run as root for volume access
+    container_name: family-video-tagger-api
+    ports:
+      - "3001:3001"
+    environment:
+      - JELLYFIN_URL=http://10.0.0.4:8096
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - JELLYFIN_USER=jeremiah
+      - MEDIA_PATH=/home-videos
+      - PORT=3001
+      - CORS_ORIGIN=http://10.0.0.4:3000
+    volumes:
+      - /volume3/vault/home-videos:/home-videos:rw
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest
+    container_name: family-video-tagger-web
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://api:3001
+      - NEXT_PUBLIC_API_URL=http://10.0.0.4:3001
+    restart: unless-stopped
+```
+
+### Deployment Workflow
+
+1. Make code changes and commit to `main`
+2. Build and push new images from dev machine (see commands above)
+3. In Portainer: Go to Stacks → family-video-tagger
+4. Click "Pull and redeploy" or manually recreate containers
+5. Verify containers are running and healthy
+
+### Troubleshooting
+
+**API container not starting:**
+- Check Portainer logs for the api container
+- Verify JELLYFIN_API_KEY environment variable is set
+- Verify volume mount path exists: `/volume3/vault/home-videos`
+- Check Jellyfin is accessible at configured URL
+
+**Web container showing connection errors:**
+- Ensure API container is running first
+- Verify NEXT_PUBLIC_API_URL points to correct IP:port
+- Check CORS_ORIGIN in API matches web URL
