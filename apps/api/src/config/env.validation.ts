@@ -38,6 +38,18 @@ export const envSchema = z.object({
     .string()
     .default('jeremiah')
     .describe('Jellyfin username for Now Playing feature'),
+
+  JELLYFIN_LIBRARY_NAME: z
+    .string()
+    .default('Home Videos')
+    .describe('Jellyfin library name to use for video listing'),
+
+  MAX_UPLOAD_SIZE_MB: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().positive())
+    .default('2048')
+    .describe('Maximum upload file size in MB (default: 2GB)'),
 });
 
 /**

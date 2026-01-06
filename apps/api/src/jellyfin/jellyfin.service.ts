@@ -65,8 +65,20 @@ interface JellyfinSession {
   };
 }
 
-/** Home Videos library name (hardcoded per requirements) */
-const HOME_VIDEOS_LIBRARY_NAME = 'Home Videos';
+/**
+ * Jellyfin BaseItemDto for updating items
+ * Partial - only include fields we want to update
+ */
+interface JellyfinItemUpdate {
+  Id: string;
+  Name?: string;
+  PremiereDate?: string;
+  Overview?: string;
+  Tags?: string[];
+  People?: Array<{ Name: string; Type: string }>;
+  CommunityRating?: number;
+  Genres?: string[];
+}
 
 /** Default timeout for Jellyfin API requests (10 seconds) */
 const FETCH_TIMEOUT_MS = 10000;
@@ -76,10 +88,12 @@ export class JellyfinService {
   private readonly logger = new Logger(JellyfinService.name);
   private readonly baseUrl: string;
   private readonly apiKey: string;
+  private readonly libraryName: string;
 
   constructor(private readonly configService: AppConfigService) {
     this.baseUrl = this.configService.jellyfinUrl;
     this.apiKey = this.configService.jellyfinApiKey;
+    this.libraryName = this.configService.jellyfinLibraryName;
   }
 
   /**
@@ -157,19 +171,19 @@ export class JellyfinService {
 
     const data = (await response.json()) as JellyfinViewsResponse;
     const homeVideosLib = data.Items.find(
-      (lib) => lib.Name === HOME_VIDEOS_LIBRARY_NAME,
+      (lib) => lib.Name === this.libraryName,
     );
 
     if (!homeVideosLib) {
       this.logger.warn(
-        `Library "${HOME_VIDEOS_LIBRARY_NAME}" not found. Available libraries: ${data.Items.map((l) => l.Name).join(', ')}`,
+        `Library "${this.libraryName}" not found. Available libraries: ${data.Items.map((l) => l.Name).join(', ')}`,
       );
       return null;
     }
 
     this.homeVideosLibraryId = homeVideosLib.Id;
     this.logger.log(
-      `Found "${HOME_VIDEOS_LIBRARY_NAME}" library with ID: ${this.homeVideosLibraryId}`,
+      `Found "${this.libraryName}" library with ID: ${this.homeVideosLibraryId}`,
     );
     return this.homeVideosLibraryId;
   }
@@ -288,6 +302,7 @@ export class JellyfinService {
   /**
    * Trigger a library refresh in Jellyfin
    * This makes Jellyfin rescan and pick up new NFO files
+   * @deprecated Use refreshHomeVideosLibrary() for targeted refresh instead
    */
   async refreshLibrary(): Promise<void> {
     const url = `${this.baseUrl}/Library/Refresh`;
@@ -308,6 +323,155 @@ export class JellyfinService {
     } catch (error) {
       // Log but don't throw - refresh is best-effort
       this.logger.warn('Failed to trigger library refresh', error);
+    }
+  }
+
+  /**
+   * Refresh only the Home Videos library
+   * Much faster than full library refresh for post-upload discovery
+   * Used after video uploads to make new files visible in Jellyfin
+   */
+  async refreshHomeVideosLibrary(): Promise<void> {
+    const libraryId = await this.getHomeVideosLibraryId();
+
+    if (!libraryId) {
+      // Fall back to full refresh if library not found
+      this.logger.warn(
+        'Home Videos library not found, falling back to full refresh',
+      );
+      return this.refreshLibrary();
+    }
+
+    const url = `${this.baseUrl}/Items/${libraryId}/Refresh`;
+    this.logger.debug(`Triggering Home Videos library refresh (${libraryId})`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        signal: this.createTimeoutSignal(),
+      });
+
+      if (!response.ok) {
+        this.logger.warn(`Library refresh returned ${response.status}`);
+      } else {
+        this.logger.log('Home Videos library refresh triggered');
+      }
+    } catch (error) {
+      // Log but don't throw - refresh is best-effort
+      this.logger.warn('Failed to trigger library refresh', error);
+    }
+  }
+
+  /**
+   * Refresh metadata for a single item in Jellyfin
+   * Much faster than full library refresh - only rescans the specified item
+   * Uses MetadataRefreshMode=FullRefresh to pick up NFO changes
+   * @deprecated NFO refresh has known issues - use updateItemMetadata() instead
+   */
+  async refreshItem(itemId: string): Promise<void> {
+    const params = new URLSearchParams({
+      MetadataRefreshMode: 'FullRefresh',
+      ImageRefreshMode: 'Default',
+      ReplaceAllMetadata: 'true',
+    });
+    const url = `${this.baseUrl}/Items/${itemId}/Refresh?${params.toString()}`;
+    this.logger.debug(`Triggering Jellyfin item refresh for: ${itemId}`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        signal: this.createTimeoutSignal(),
+      });
+
+      if (!response.ok) {
+        this.logger.warn(`Item refresh returned ${response.status} for ${itemId}`);
+      } else {
+        this.logger.log(`Jellyfin item refresh triggered for: ${itemId}`);
+      }
+    } catch (error) {
+      // Log but don't throw - refresh is best-effort
+      this.logger.warn(`Failed to trigger item refresh for ${itemId}`, error);
+    }
+  }
+
+  /**
+   * Update item metadata directly via Jellyfin API
+   * This bypasses NFO file parsing issues in Jellyfin 10.9+
+   * @see https://github.com/jellyfin/jellyfin/issues/13655
+   */
+  async updateItemMetadata(
+    itemId: string,
+    metadata: {
+      title?: string;
+      date?: string;
+      description?: string;
+      tags?: string[];
+      people?: string[];
+      rating?: number;
+    },
+  ): Promise<boolean> {
+    const url = `${this.baseUrl}/Items/${itemId}`;
+    this.logger.debug(`Updating Jellyfin item metadata for: ${itemId}`);
+
+    // Build the update payload
+    const updatePayload: JellyfinItemUpdate = {
+      Id: itemId,
+    };
+
+    if (metadata.title) {
+      updatePayload.Name = metadata.title;
+    }
+
+    if (metadata.date) {
+      // Jellyfin expects ISO 8601 format
+      updatePayload.PremiereDate = metadata.date;
+    }
+
+    if (metadata.description) {
+      updatePayload.Overview = metadata.description;
+    }
+
+    if (metadata.tags && metadata.tags.length > 0) {
+      updatePayload.Tags = metadata.tags;
+    }
+
+    if (metadata.people && metadata.people.length > 0) {
+      updatePayload.People = metadata.people.map((name) => ({
+        Name: name,
+        Type: 'Actor',
+      }));
+    }
+
+    if (metadata.rating !== undefined) {
+      updatePayload.CommunityRating = metadata.rating;
+    }
+
+    // Always set Home Video genre
+    updatePayload.Genres = ['Home Video'];
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(updatePayload),
+        signal: this.createTimeoutSignal(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        this.logger.warn(
+          `Item update returned ${response.status} for ${itemId}: ${errorText}`,
+        );
+        return false;
+      }
+
+      this.logger.log(`Jellyfin item metadata updated for: ${itemId}`);
+      return true;
+    } catch (error) {
+      this.logger.warn(`Failed to update item metadata for ${itemId}`, error);
+      return false;
     }
   }
 

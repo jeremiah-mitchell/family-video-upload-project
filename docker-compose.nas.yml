@@ -1,0 +1,45 @@
+# NAS deployment docker-compose for UGREEN NAS (10.0.0.4)
+# Pre-configured for local network access
+# Images are pre-built with NEXT_PUBLIC_API_URL=http://10.0.0.4:3001
+services:
+  web:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest
+    container_name: family-video-tagger-web
+    ports:
+      - "3000:3000"
+    environment:
+      # Server-side API URL (container-to-container)
+      - API_URL=http://api:3001
+      # Client-side API URL (browser to NAS) - baked in at build time
+      - NEXT_PUBLIC_API_URL=http://10.0.0.4:3001
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest
+    container_name: family-video-tagger-api
+    user: "0:0"
+    ports:
+      - "3001:3001"
+    environment:
+      # Jellyfin connection
+      - JELLYFIN_URL=http://10.0.0.4:8096
+      - JELLYFIN_API_KEY=dcdc8d9b02d449d7a945ed8ae0a51fdf
+      - JELLYFIN_USER=jeremiah
+      - JELLYFIN_LIBRARY_NAME=Santiago y Armida Producciones
+      # Media storage path (inside container)
+      - MEDIA_PATH=/media
+      # API server config
+      - PORT=3001
+      - CORS_ORIGIN=http://10.0.0.4:3000
+      # Upload limits (default: 2GB)
+      - MAX_UPLOAD_SIZE_MB=2048
+    volumes:
+      # Santiago y Armida Producciones folder on UGREEN NAS
+      - "/volume3/Santiago y Armida Producciones:/media:rw"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

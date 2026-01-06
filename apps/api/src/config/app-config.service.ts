@@ -52,4 +52,26 @@ export class AppConfigService {
   get jellyfinUser(): string {
     return this.configService.get('JELLYFIN_USER', { infer: true });
   }
+
+  /**
+   * Maximum upload file size in bytes
+   */
+  get maxUploadSizeBytes(): number {
+    const sizeMb = this.configService.get('MAX_UPLOAD_SIZE_MB', { infer: true });
+    return sizeMb * 1024 * 1024;
+  }
+
+  /**
+   * Maximum upload file size in MB (for display)
+   */
+  get maxUploadSizeMb(): number {
+    return this.configService.get('MAX_UPLOAD_SIZE_MB', { infer: true });
+  }
+
+  /**
+   * Jellyfin library name to use for video listing
+   */
+  get jellyfinLibraryName(): string {
+    return this.configService.get('JELLYFIN_LIBRARY_NAME', { infer: true });
+  }
 }

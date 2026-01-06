@@ -80,7 +80,7 @@ development_status:
 
   # Epic 6: Usability Enhancements
   epic-6: done
-  6-1-filter-home-videos-library: done
+  6-1-filter-home-videos-library: done  # 2026-01-06: Made library name configurable via JELLYFIN_LIBRARY_NAME
   6-2-now-playing-indicator: done
   6-3-upload-page-stub: done
   epic-6-retrospective: optional
@@ -93,3 +93,15 @@ development_status:
   7-2-update-api-cors-and-frontend-url: backlog
   7-3-rebuild-and-deploy-remote-config: backlog
   epic-7-retrospective: optional
+
+  # Epic 8: Video Upload
+  # Sprint Change Proposal: _bmad-output/planning-artifacts/sprint-change-proposal-video-upload.md
+  # Implemented: 2026-01-06
+  epic-8: done
+  8-1-video-upload-api-endpoint: done
+  8-2-upload-ui-implementation: done
+  8-3-upload-progress-and-feedback: done
+  8-4-post-upload-workflow: done
+  8-5-dvd-video-ts-extraction: done
+  8-6-raw-iso-unfinalized-support: backlog  # Future - TBD
+  epic-8-retrospective: optional
