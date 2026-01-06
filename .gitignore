@@ -55,6 +55,9 @@ coverage/
 temp/
 uploads/
 
+# Test samples (video files for local testing)
+test-samples/
+
 # Media files (for local dev - don't commit video files)
 *.mp4
 *.vob

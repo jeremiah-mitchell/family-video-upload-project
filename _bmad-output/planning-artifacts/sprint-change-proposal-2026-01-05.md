@@ -215,6 +215,15 @@ Tags are predefined categories for organizing home videos:
 - Christmas, Mexico, Family, Birthday, Vacation, Holiday, School, Sports
 
 Tags are stored in NFO as `<tag>` elements and displayed in Jellyfin's tag view.
+
+### Jellyfin Metadata Update Strategy
+
+Due to a [known Jellyfin bug](https://github.com/jellyfin/jellyfin/issues/13655) where NFO file changes are not picked up during metadata refresh (introduced in 10.9+), we use a dual-write strategy:
+
+1. **NFO File Write** - Metadata is written to NFO files for backup/portability
+2. **Direct API Update** - Metadata is pushed directly to Jellyfin via `POST /Items/{itemId}`
+
+This ensures immediate metadata updates while maintaining NFO files for data portability.
 ```
 
 ---

@@ -252,14 +252,25 @@ From the project root on a development machine:
 # Ensure logged into GHCR
 echo $GITHUB_TOKEN | docker login ghcr.io -u jeremiah-mitchell --password-stdin
 
-# Build and push API image
-docker build -f apps/api/Dockerfile -t ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest .
+# Build and push API image (use --platform for cross-architecture builds)
+docker build --platform linux/amd64 -f apps/api/Dockerfile -t ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest .
 docker push ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest
 
-# Build and push Web image
-docker build -f apps/web/Dockerfile -t ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest .
+# Build and push Web image (must specify API URL at build time!)
+docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_API_URL=http://10.0.0.4:3001 \
+  -f apps/web/Dockerfile \
+  -t ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest .
 docker push ghcr.io/jeremiah-mitchell/family-video-tagger-web:latest
 ```
+
+**Important: Platform Flag**
+
+The `--platform linux/amd64` flag is **required** when building on Apple Silicon (M1/M2/M3) Macs for deployment to x86_64 targets like the UGREEN NAS. Without this flag, Docker builds native ARM64 images which fail with `exec format error` on x86_64 hosts.
+
+**Important: NEXT_PUBLIC_API_URL Build Arg**
+
+The `--build-arg NEXT_PUBLIC_API_URL=http://10.0.0.4:3001` is **required** for the web image. Next.js `NEXT_PUBLIC_*` environment variables are **baked into the JavaScript bundle at build time** - they cannot be changed at runtime via Docker environment variables. If you omit this, the web app will try to call `http://localhost:3001` instead of the correct NAS IP address.
 
 ### NAS Deployment (Portainer)
 
@@ -278,11 +289,11 @@ services:
       - JELLYFIN_URL=http://10.0.0.4:8096
       - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
       - JELLYFIN_USER=jeremiah
-      - MEDIA_PATH=/home-videos
+      - MEDIA_PATH=/media
       - PORT=3001
       - CORS_ORIGIN=http://10.0.0.4:3000
     volumes:
-      - /volume3/vault/home-videos:/home-videos:rw
+      - "/volume3/Santiago y Armida Producciones:/media:rw"
     restart: unless-stopped
 
   web:
@@ -316,3 +327,62 @@ services:
 - Ensure API container is running first
 - Verify NEXT_PUBLIC_API_URL points to correct IP:port
 - Check CORS_ORIGIN in API matches web URL
+
+**`exec format error` on container start:**
+- This indicates an architecture mismatch between the image and host
+- Rebuild images with `--platform linux/amd64` flag if deploying to x86_64 NAS from ARM Mac
+- Example: `docker build --platform linux/amd64 -f apps/api/Dockerfile -t ghcr.io/jeremiah-mitchell/family-video-tagger-api:latest .`
+
+## Video Upload Feature (Epic 8)
+
+The API container includes DVD processing tools for extracting chapters from VIDEO_TS folders:
+
+### Included Tools
+
+- **ffmpeg** - Video transcoding and chapter extraction
+- **lsdvd** - DVD IFO file parsing for chapter information (from Alpine edge/testing repo)
+
+### Upload Endpoints
+
+| Endpoint | Purpose | Method |
+|----------|---------|--------|
+| `GET /upload/config` | Get upload configuration (max size, supported types) | GET |
+| `POST /upload/video` | Upload a single video file | POST (multipart) |
+| `POST /upload/dvd-folder` | Upload VIDEO_TS folder files for chapter extraction | POST (multipart) |
+
+### Upload Workflow
+
+**Single Video Upload:**
+1. Select "Video File" tab on upload page
+2. Drag-and-drop or click to select a video file (MP4, MOV, AVI, MKV, etc.)
+3. Click Upload - file is saved to media directory
+4. Jellyfin library refresh is triggered automatically
+
+**DVD Folder Upload:**
+1. Select "DVD Folder" tab on upload page
+2. Click to browse and select your VIDEO_TS folder (uses browser folder picker)
+3. All VOB/IFO/BUP files are uploaded to the server
+4. Server reconstructs VIDEO_TS structure and runs `lsdvd` to parse chapters
+5. Each chapter is extracted via `ffmpeg` to separate MP4 files
+6. Files are saved as `{FolderName}_ch01.mp4`, `{FolderName}_ch02.mp4`, etc.
+7. Jellyfin library refresh is triggered
+
+### File Size Limits
+
+- Single video file: 2 GB (configurable via `MAX_UPLOAD_SIZE_MB` env var)
+- DVD folder: 10 GB total (individual VOB files up to 2 GB each)
+
+### Troubleshooting Upload Issues
+
+**"DVD tools not available" error:**
+- The API container is missing `lsdvd` or `ffmpeg`
+- Rebuild the API image to ensure tools are installed
+
+**"Invalid DVD folder" error:**
+- Selected folder doesn't contain VOB/IFO files
+- Make sure you're selecting the VIDEO_TS folder, not a parent directory
+
+**Upload times out:**
+- Large files may take several minutes
+- DVD extraction can take 5-30 minutes depending on content
+- The 30-minute timeout should handle most cases
