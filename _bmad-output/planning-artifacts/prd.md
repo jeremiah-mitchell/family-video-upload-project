@@ -24,7 +24,7 @@ Family-video-upload-project is a metadata tagging webapp that enables a non-tech
 
 The core problem: Approximately 70-100 DVDs containing irreplaceable family memories sit inaccessible - finalized DVDs require manual playback with no discoverability, unfinalized DVDs are completely inaccessible without technical extraction, and the only person who knows the video contents (Santiago) has no practical way to capture that knowledge.
 
-This PRD defines the requirements for a standalone webapp with a radically simplified interface: display untagged videos, link to Jellyfin for playback, provide 5 metadata fields (title, date, people, rating, description), and save as NFO files that Jellyfin automatically reads.
+This PRD defines the requirements for a standalone webapp with a radically simplified interface: display untagged videos, link to Jellyfin for playback, provide 6 metadata fields (title, date, people, tags, rating, description), and save as NFO files that Jellyfin automatically reads.
 
 ### What Makes This Special
 
@@ -81,7 +81,7 @@ This is a personal/family project with no revenue targets. Success is measured b
 | Metric | Target |
 |--------|--------|
 | NFO file generation | Files written correctly in Jellyfin-compatible XML format |
-| Jellyfin integration | All 5 metadata fields (title, date, people, rating, description) display in Jellyfin |
+| Jellyfin integration | All 6 metadata fields (title, date, people, tags, rating, description) display in Jellyfin |
 | API reliability | Video list loads consistently from Jellyfin REST API |
 | Data persistence | No metadata loss - NFO files are the source of truth |
 
@@ -105,7 +105,7 @@ Core workflow: List → Watch → Tag → Save → Next
 |---------|-------------|
 | Video list | Display untagged videos from Jellyfin library |
 | Jellyfin link | Click to open video in Jellyfin for viewing |
-| 5 metadata fields | Title, Date, People, Rating, Description |
+| 6 metadata fields | Title, Date, People, Tags, Rating, Description |
 | Save to NFO | Write metadata as Jellyfin-compatible NFO file |
 | Refresh trigger | Tell Jellyfin to re-scan after save |
 
@@ -311,7 +311,7 @@ Not applicable - private webapp behind Cloudflare Access.
 |---------|---------------|
 | Video list from Jellyfin | Can't tag without seeing what's available |
 | Jellyfin playback link | Can't tag without watching |
-| 5 metadata fields | Core data capture (title, date, people, rating, description) |
+| 6 metadata fields | Core data capture (title, date, people, tags, rating, description) |
 | NFO file generation | Jellyfin can't read metadata without it |
 | Library refresh trigger | Metadata won't appear until Jellyfin re-scans |
 | Save confirmation | Santiago needs feedback that it worked |
@@ -378,8 +378,11 @@ Not applicable - private webapp behind Cloudflare Access.
 ### Metadata Entry
 
 - FR8: Santiago can enter a title for the video
-- FR9: Santiago can select a date for when the video was filmed
+- FR9: Santiago can select a date for when the video was filmed (pre-filled from video creation date when available)
 - FR10: Santiago can select one or more people who appear in the video
+  - UI displays familiar short names (e.g., "Santiago")
+  - NFO stores full names for Jellyfin actor display (e.g., "Santiago Arcaraz")
+- FR10a: Santiago can select one or more tags to categorize the video (Christmas, Mexico, Family, Birthday, Vacation, Holiday, School, Sports)
 - FR11: Santiago can assign a rating (1-10) to the video
 - FR12: Santiago can enter a free-text description of the video content
 - FR13: Santiago can view previously entered metadata for a video (if editing)

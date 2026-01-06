@@ -12,6 +12,10 @@ interface JellyfinItem {
   ImageTags?: {
     Primary?: string;
   };
+  /** Date the item was created/added to Jellyfin (ISO 8601) */
+  DateCreated?: string;
+  /** Premiere date if set via NFO (ISO 8601) */
+  PremiereDate?: string;
 }
 
 /**
@@ -181,7 +185,7 @@ export class JellyfinService {
     const params = new URLSearchParams({
       IncludeItemTypes: 'Video',
       Recursive: 'true',
-      Fields: 'Path,ImageTags',
+      Fields: 'Path,ImageTags,DateCreated,PremiereDate',
       SortBy: 'SortName',
       SortOrder: 'Ascending',
     });

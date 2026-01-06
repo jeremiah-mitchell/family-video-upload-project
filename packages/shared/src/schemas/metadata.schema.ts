@@ -8,6 +8,7 @@ export const videoMetadataSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   date: z.string().optional(),
   people: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
   rating: z.number().min(1).max(10).optional(),
   description: z.string().optional(),
 });

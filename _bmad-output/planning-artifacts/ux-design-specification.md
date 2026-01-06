@@ -126,8 +126,9 @@ Single page with two-column layout (desktop):
 | Field | Input Type | Notes |
 |-------|------------|-------|
 | Title | Text input | Required |
-| Date | Native date picker | `<input type="date">` |
-| People | Multi-select | Checkboxes or tag-style picker |
+| Date | Native date picker | `<input type="date">`, pre-filled from video creation date |
+| People | Multi-select | Tag-style picker with short display names |
+| Tags | Multi-select | Tag-style picker: Christmas, Mexico, Family, Birthday, Vacation, Holiday, School, Sports |
 | Rating | Number input or slider | 1-10 scale |
 | Description | Textarea | Optional, 2-3 rows |
 

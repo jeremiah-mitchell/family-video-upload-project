@@ -12,6 +12,8 @@ export interface Video {
   path: string;
   /** Optional thumbnail URL */
   thumbnailUrl?: string;
+  /** Date the video was created/filmed (ISO 8601 date string, e.g. "2024-01-15") */
+  dateCreated?: string;
 }
 
 /**

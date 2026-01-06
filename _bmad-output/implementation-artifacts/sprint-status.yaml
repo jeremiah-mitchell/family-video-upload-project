@@ -84,3 +84,12 @@ development_status:
   6-2-now-playing-indicator: done
   6-3-upload-page-stub: done
   epic-6-retrospective: optional
+
+  # Epic 7: Remote Access (Proposed)
+  # Sprint Change Proposal: _bmad-output/implementation-artifacts/sprint-change-proposal-remote-access.md
+  # Status: Awaiting user approval
+  epic-7: backlog
+  7-1-configure-cloudflare-tunnel-routes: backlog
+  7-2-update-api-cors-and-frontend-url: backlog
+  7-3-rebuild-and-deploy-remote-config: backlog
+  epic-7-retrospective: optional

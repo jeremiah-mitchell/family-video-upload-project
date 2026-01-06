@@ -172,6 +172,36 @@ web:
 | Data Validation | Zod | TypeScript-native, shared between frontend/backend |
 | File Writing | Atomic writes | Write to temp file, then rename (prevents corruption) |
 
+### Family Member Name Mapping
+
+| UI Display | NFO Actor Name |
+|------------|----------------|
+| Santiago | Santiago Arcaraz |
+| Armida | Armida Arcaraz |
+| Fernanda | Fernanda Arcaraz Mitchell |
+| Mariana | Mariana Arcaraz |
+| Tita | Tita |
+| Jeremiah | Jeremiah Arcaraz Mitchell |
+| Eric | Eric Peyton |
+| Lucia | Lucia Arcaraz |
+| Sofia | Sofia Arcaraz Mitchell |
+
+**Implementation:** Frontend displays short names for easy selection. On save, the API maps to full names before writing to NFO `<actor>` tags.
+
+### Video Date Handling
+
+- **Source:** Jellyfin `DateCreated` or `PremiereDate` (if NFO exists)
+- **Pre-fill:** Form auto-populates date from video's `dateCreated` field
+- **Storage:** Saved to NFO `<premiered>` tag in YYYY-MM-DD format
+- **Display:** Jellyfin shows year extracted from premiered date
+
+### Tags System
+
+Tags are predefined categories for organizing home videos:
+- Christmas, Mexico, Family, Birthday, Vacation, Holiday, School, Sports
+
+Tags are stored in NFO as `<tag>` elements and displayed in Jellyfin's tag view.
+
 ### Authentication & Security
 
 | Decision | Choice | Rationale |

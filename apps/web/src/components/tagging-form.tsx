@@ -4,17 +4,37 @@ import { useState, useEffect, useCallback, type FormEvent, type ChangeEvent } fr
 import type { Video, VideoMetadata } from '@family-video/shared';
 import styles from './tagging-form.module.css';
 
-// Predefined list of family members - can be extended via config later
-const FAMILY_MEMBERS = [
-  'Santiago',
-  'Armida',
-  'Jeremiah',
-  'David',
-  'Sarah',
-  'Mom',
-  'Dad',
-  'Grandma',
-  'Grandpa',
+// Family member name mapping: UI display name -> NFO full name
+const FAMILY_MEMBERS: Record<string, string> = {
+  'Santiago': 'Santiago Arcaraz',
+  'Armida': 'Armida Arcaraz',
+  'Fernanda': 'Fernanda Arcaraz Mitchell',
+  'Mariana': 'Mariana Arcaraz',
+  'Tita': 'Tita',
+  'Jeremiah': 'Jeremiah Arcaraz Mitchell',
+  'Eric': 'Eric Peyton',
+  'Lucia': 'Lucia Arcaraz',
+  'Sofia': 'Sofia Arcaraz Mitchell',
+};
+
+// Reverse mapping: NFO full name -> UI display name
+const FULL_NAME_TO_DISPLAY: Record<string, string> = Object.fromEntries(
+  Object.entries(FAMILY_MEMBERS).map(([display, full]) => [full, display])
+);
+
+// Display names for UI
+const FAMILY_MEMBER_NAMES = Object.keys(FAMILY_MEMBERS);
+
+// Predefined tags for categorizing home videos
+const VIDEO_TAGS = [
+  'Christmas',
+  'Mexico',
+  'Family',
+  'Birthday',
+  'Vacation',
+  'Holiday',
+  'School',
+  'Sports',
 ];
 
 export interface TaggingFormProps {
@@ -35,6 +55,7 @@ export function TaggingForm({
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [people, setPeople] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [rating, setRating] = useState<string>('');
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -45,20 +66,27 @@ export function TaggingForm({
     if (existingMetadata) {
       setTitle(existingMetadata.title || '');
       setDate(existingMetadata.date || '');
-      setPeople(existingMetadata.people || []);
+      // Map full names from NFO back to display names for UI
+      const displayNames = (existingMetadata.people || []).map(
+        (fullName) => FULL_NAME_TO_DISPLAY[fullName] || fullName
+      );
+      setPeople(displayNames);
+      setTags(existingMetadata.tags || []);
       setRating(existingMetadata.rating?.toString() || '');
       setDescription(existingMetadata.description || '');
     } else if (video) {
       // Pre-fill title with filename (without extension)
       const nameWithoutExt = video.filename.replace(/\.[^/.]+$/, '');
       setTitle(nameWithoutExt);
-      setDate('');
+      // Pre-fill date from video's creation date if available
+      setDate(video.dateCreated || '');
       setPeople([]);
+      setTags([]);
       setRating('');
       setDescription('');
     }
     setTitleError(null);
-  }, [video?.id, existingMetadata]);
+  }, [video?.id, video?.dateCreated, existingMetadata]);
 
   const handleWatchClick = useCallback(() => {
     if (!video) return;
@@ -72,6 +100,14 @@ export function TaggingForm({
       prev.includes(person)
         ? prev.filter((p) => p !== person)
         : [...prev, person]
+    );
+  }, []);
+
+  const handleTagToggle = useCallback((tag: string) => {
+    setTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
+        : [...prev, tag]
     );
   }, []);
 
@@ -89,10 +125,14 @@ export function TaggingForm({
     setIsSaving(true);
 
     try {
+      // Map display names to full names for NFO storage
+      const mappedPeople = people.map((name) => FAMILY_MEMBERS[name] || name);
+
       const metadata: VideoMetadata = {
         title: title.trim(),
         date: date || undefined,
-        people,
+        people: mappedPeople,
+        tags: tags,
         rating: rating ? parseInt(rating, 10) : undefined,
         description: description.trim() || undefined,
       };
@@ -183,7 +223,7 @@ export function TaggingForm({
         <div className={styles.fieldGroup}>
           <label className={styles.label}>People</label>
           <div className={styles.peopleList} role="group" aria-label="Select people in video">
-            {FAMILY_MEMBERS.map((person) => (
+            {FAMILY_MEMBER_NAMES.map((person) => (
               <button
                 key={person}
                 type="button"
@@ -192,6 +232,23 @@ export function TaggingForm({
                 aria-pressed={people.includes(person)}
               >
                 {person}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Tags</label>
+          <div className={styles.peopleList} role="group" aria-label="Select tags for video">
+            {VIDEO_TAGS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={`${styles.personTag} ${tags.includes(tag) ? styles.selected : ''}`}
+                onClick={() => handleTagToggle(tag)}
+                aria-pressed={tags.includes(tag)}
+              >
+                {tag}
               </button>
             ))}
           </div>

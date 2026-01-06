@@ -36,6 +36,7 @@ export class VideosService {
         path,
         isTagged,
         thumbnailUrl: this.jellyfinService.getThumbnailUrl(item.Id, hasImage),
+        dateCreated: this.extractDateCreated(item.DateCreated, item.PremiereDate),
       };
     });
 
@@ -44,6 +45,34 @@ export class VideosService {
     );
 
     return videos;
+  }
+
+  /**
+   * Extract the best available date for a video
+   * Prefers PremiereDate (from NFO) over DateCreated (file creation)
+   * Returns date in YYYY-MM-DD format for HTML date input
+   */
+  private extractDateCreated(
+    dateCreated?: string,
+    premiereDate?: string,
+  ): string | undefined {
+    // Prefer premiere date (set via NFO) over file creation date
+    const dateStr = premiereDate || dateCreated;
+    if (!dateStr) {
+      return undefined;
+    }
+
+    // Parse and format to YYYY-MM-DD for HTML date input
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        return undefined;
+      }
+      // Format as YYYY-MM-DD
+      return date.toISOString().split('T')[0];
+    } catch {
+      return undefined;
+    }
   }
 
   /**

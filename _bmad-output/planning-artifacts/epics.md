@@ -304,10 +304,12 @@ So that **I can describe the video content for the family**.
 
 **Given** a video is selected
 **When** I view the tagging form
-**Then** I see input fields for: Title (text), Date (date picker), People (multi-select), Rating (1-10), Description (textarea)
+**Then** I see input fields for: Title (text), Date (date picker), People (multi-select), Tags (multi-select), Rating (1-10), Description (textarea)
 **And** Title is marked as required
 **And** all other fields are optional
 **And** the form uses native HTML inputs with browser defaults
+**And** the Date field pre-populates from the video's creation date when available
+**And** Tags options include: Christmas, Mexico, Family, Birthday, Vacation, Holiday, School, Sports
 
 ### Story 3.3: People Selection
 
@@ -322,6 +324,8 @@ So that **videos can be found by who's in them**.
 **Then** I can select multiple people from a predefined list
 **And** selected people are visually indicated
 **And** I can deselect people I've already selected
+**And** people display with short familiar names in the UI (e.g., "Santiago")
+**And** when saved, full names are stored in the NFO file for proper Jellyfin display (e.g., "Santiago Arcaraz")
 
 ### Story 3.4: Load Existing Metadata
 

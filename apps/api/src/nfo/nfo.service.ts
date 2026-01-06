@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { writeFile, rename, mkdir, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join, dirname, basename, extname } from 'path';
+import { join, dirname, basename, extname, resolve } from 'path';
 import type { VideoMetadata } from '@family-video/shared';
 import { AppConfigService } from '../config';
 
@@ -48,6 +48,13 @@ export class NfoService {
         lines.push('  <actor>');
         lines.push(`    <name>${this.escapeXml(person)}</name>`);
         lines.push('  </actor>');
+      }
+    }
+
+    // Add tags for categorization
+    if (metadata.tags && metadata.tags.length > 0) {
+      for (const tag of metadata.tags) {
+        lines.push(`  <tag>${this.escapeXml(tag)}</tag>`);
       }
     }
 
@@ -100,7 +107,13 @@ export class NfoService {
   private mapToContainerPath(jellyfinPath: string): string {
     // If path already starts with our media path, use it directly
     if (jellyfinPath.startsWith(this.mediaPath)) {
-      return jellyfinPath;
+      const resolved = resolve(jellyfinPath);
+      // Verify path stays within media path (prevent path traversal)
+      if (!resolved.startsWith(resolve(this.mediaPath))) {
+        this.logger.error(`Path traversal attempt detected: ${jellyfinPath}`);
+        throw new Error('Invalid path');
+      }
+      return resolved;
     }
 
     // Common pattern: Jellyfin path is /home-videos/...
@@ -108,7 +121,13 @@ export class NfoService {
     // Extract everything after /home-videos and join with our media path
     const homeVideosMatch = jellyfinPath.match(/\/home-videos\/(.+)$/);
     if (homeVideosMatch) {
-      return join(this.mediaPath, homeVideosMatch[1]);
+      const resolved = resolve(this.mediaPath, homeVideosMatch[1]);
+      // Verify path stays within media path (prevent path traversal)
+      if (!resolved.startsWith(resolve(this.mediaPath))) {
+        this.logger.error(`Path traversal attempt detected: ${jellyfinPath}`);
+        throw new Error('Invalid path');
+      }
+      return resolved;
     }
 
     // Fallback: try to find common path segments
@@ -196,11 +215,22 @@ export class NfoService {
       }
     }
 
+    // Extract tags
+    const tags = getAllTagContents('tag');
+
+    // Validate rating - ensure it's a valid number
+    const parsedRating = ratingStr ? parseInt(ratingStr, 10) : undefined;
+    const rating =
+      parsedRating !== undefined && !isNaN(parsedRating)
+        ? parsedRating
+        : undefined;
+
     return {
       title,
       date,
       people,
-      rating: ratingStr ? parseInt(ratingStr, 10) : undefined,
+      tags,
+      rating,
       description,
     };
   }
