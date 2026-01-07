@@ -1,7 +1,8 @@
+/* Video List - Apple-like list styling with large touch targets */
 .container {
   flex: 1;
   overflow-y: auto;
-  background-color: var(--color-background);
+  background-color: var(--color-white, #FFFFFF);
 }
 
 .list {
@@ -13,19 +14,21 @@
 .item {
   display: flex;
   align-items: center;
-  padding: 12px var(--spacing-md);
+  min-height: var(--touch-target-min, 44px);
+  padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
-  border-bottom: 1px solid var(--color-border);
-  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--color-border, #E5E5EA);
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
 }
 
 .item:hover {
-  background-color: var(--color-border);
+  background-color: var(--color-background, #F2F2F7);
 }
 
 .item:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
+  outline: 3px solid var(--color-primary, #007AFF);
+  outline-offset: -3px;
 }
 
 .item:last-child {
@@ -33,16 +36,16 @@
 }
 
 .selected {
-  background-color: var(--color-primary);
-  color: var(--color-white);
+  background-color: var(--color-primary, #007AFF);
+  color: var(--color-white, #FFFFFF);
 }
 
 .selected:hover {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-dark, #0056D6);
 }
 
 .selected:focus {
-  outline-color: var(--color-primary-dark);
+  outline-color: var(--color-white, #FFFFFF);
 }
 
 .filename {
@@ -51,21 +54,22 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  font-weight: 500;
 }
 
 .tagged {
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #8E8E93);
 }
 
 .taggedIcon {
   flex-shrink: 0;
   margin-right: var(--spacing-sm);
-  color: var(--color-primary);
-  font-size: 0.875rem;
+  color: var(--color-success, #34C759);
+  font-size: 1rem;
 }
 
 .selected .taggedIcon {
-  color: var(--color-white);
+  color: var(--color-white, #FFFFFF);
 }
 
 .loading {
@@ -76,10 +80,10 @@
 }
 
 .skeleton {
-  height: 44px;
-  background: linear-gradient(90deg, var(--color-border) 25%, var(--color-background) 50%, var(--color-border) 75%);
+  height: var(--touch-target-min, 44px);
+  background: linear-gradient(90deg, var(--color-border, #E5E5EA) 25%, var(--color-background, #F2F2F7) 50%, var(--color-border, #E5E5EA) 75%);
   background-size: 200% 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 8px);
   animation: shimmer 1.5s infinite;
 }
 
@@ -96,19 +100,21 @@
 .error {
   padding: var(--spacing-lg);
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #8E8E93);
+  font-size: 1.125rem;
 }
 
 .error {
-  color: var(--color-error);
+  color: var(--color-error, #FF3B30);
 }
 
 .errorTitle {
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: var(--spacing-sm);
+  font-size: 1.25rem;
 }
 
 .errorMessage {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
+  font-size: 1rem;
+  color: var(--color-text-muted, #8E8E93);
 }

@@ -20,7 +20,8 @@ interface FolderSelection {
 }
 
 export default function UploadPage() {
-  const [uploadType, setUploadType] = useState<UploadType>('video');
+  // Default to 'dvd' as it's the most commonly used option
+  const [uploadType, setUploadType] = useState<UploadType>('dvd');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<FolderSelection | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>('idle');

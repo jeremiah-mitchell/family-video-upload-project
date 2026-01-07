@@ -1,3 +1,4 @@
+/* Toast notifications - Apple-like feedback */
 .toastContainer {
   position: fixed;
   bottom: var(--spacing-lg);
@@ -11,48 +12,56 @@
 .toast {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: 12px 16px;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.2s ease-out;
-  max-width: 400px;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.12));
+  animation: slideIn 0.3s ease-out;
+  max-width: 450px;
+  min-height: 56px;
 }
 
 .toast.success {
-  background-color: #28a745;
-  color: var(--color-white);
+  background-color: var(--color-success, #34C759);
+  color: var(--color-white, #FFFFFF);
 }
 
 .toast.error {
-  background-color: var(--color-error);
-  color: var(--color-white);
+  background-color: var(--color-error, #FF3B30);
+  color: var(--color-white, #FFFFFF);
 }
 
 .icon {
   flex-shrink: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .message {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .dismissButton {
   flex-shrink: 0;
-  background: none;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   color: inherit;
-  opacity: 0.7;
   cursor: pointer;
-  padding: 4px;
-  font-size: 1rem;
+  padding: var(--spacing-sm);
+  font-size: 1.125rem;
   line-height: 1;
+  border-radius: var(--radius-sm, 8px);
+  min-width: var(--touch-target-min, 44px);
+  min-height: var(--touch-target-min, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
 }
 
 .dismissButton:hover {
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 @keyframes slideIn {

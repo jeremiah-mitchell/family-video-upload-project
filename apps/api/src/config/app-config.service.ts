@@ -40,10 +40,24 @@ export class AppConfigService {
   }
 
   /**
-   * Frontend URL for CORS configuration
+   * Frontend URL(s) for CORS configuration
+   * Returns array if comma-separated, single string otherwise
    */
-  get corsOrigin(): string {
-    return this.configService.get('CORS_ORIGIN', { infer: true });
+  get corsOrigin(): string | string[] {
+    const origin = this.configService.get('CORS_ORIGIN', { infer: true });
+    if (origin.includes(',')) {
+      return origin.split(',').map((o) => o.trim());
+    }
+    return origin;
+  }
+
+  /**
+   * Public Jellyfin URL for "Watch in Jellyfin" links
+   * Falls back to internal JELLYFIN_URL if not set
+   */
+  get jellyfinPublicUrl(): string {
+    const publicUrl = this.configService.get('JELLYFIN_PUBLIC_URL', { infer: true });
+    return publicUrl || this.jellyfinUrl;
   }
 
   /**

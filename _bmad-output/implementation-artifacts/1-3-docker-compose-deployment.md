@@ -386,3 +386,164 @@ The API container includes DVD processing tools for extracting chapters from VID
 - Large files may take several minutes
 - DVD extraction can take 5-30 minutes depending on content
 - The 30-minute timeout should handle most cases
+
+## Remote Access Deployment (Epic 7)
+
+The application supports remote access via Cloudflare Tunnel, enabling secure HTTPS access from outside the local network.
+
+### Architecture
+
+```
+Internet → Cloudflare Tunnel → minipc (10.0.0.3) → NAS (10.0.0.4)
+                                cloudflared          Docker containers
+
+Tunnel Routes:
+  syap.losbisquets.xyz      → http://10.0.0.4:3000 (web app)
+  api-syap.losbisquets.xyz  → http://10.0.0.4:3001 (API)
+  jellyfin.losbisquets.xyz  → http://10.0.0.4:8096 (Jellyfin)
+```
+
+### Cloudflare Tunnel Configuration
+
+On minipc (`10.0.0.3`), add these routes to cloudflared config:
+
+```yaml
+# /etc/cloudflared/config.yml or ~/.cloudflared/config.yml
+ingress:
+  - hostname: syap.losbisquets.xyz
+    service: http://10.0.0.4:3000
+  - hostname: api-syap.losbisquets.xyz
+    service: http://10.0.0.4:3001
+  - hostname: jellyfin.losbisquets.xyz
+    service: http://10.0.0.4:8096
+  # ... other routes
+  - service: http_status:404
+```
+
+### Two Deployment Modes
+
+The project supports two image tags for different deployment scenarios:
+
+| Tag | Purpose | API URL (baked in) | Use Case |
+|-----|---------|-------------------|----------|
+| `:latest` | Local network | `http://10.0.0.4:3001` | Access from home network |
+| `:remote` | Cloudflare Tunnel | `https://api-syap.losbisquets.xyz` | Access from internet |
+
+**Why two tags?** Next.js `NEXT_PUBLIC_*` environment variables are compiled into the JavaScript bundle at build time. You cannot change them at runtime. Therefore, different builds are needed for different API URLs.
+
+### Remote Deployment Compose File
+
+Use `docker-compose.remote.yml` for Cloudflare Tunnel access:
+
+```yaml
+# docker-compose.remote.yml
+services:
+  web:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-web:remote
+    container_name: family-video-tagger-web
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://api:3001
+      - NEXT_PUBLIC_API_URL=https://api-syap.losbisquets.xyz
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-api:remote
+    container_name: family-video-tagger-api
+    user: "0:0"
+    ports:
+      - "3001:3001"
+    environment:
+      - JELLYFIN_URL=http://10.0.0.4:8096
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - JELLYFIN_USER=jeremiah
+      - JELLYFIN_LIBRARY_NAME=Santiago y Armida Producciones
+      - JELLYFIN_PUBLIC_URL=https://jellyfin.losbisquets.xyz
+      - MEDIA_PATH=/media
+      - PORT=3001
+      - CORS_ORIGIN=http://10.0.0.4:3000,https://syap.losbisquets.xyz,https://api-syap.losbisquets.xyz
+      - MAX_UPLOAD_SIZE_MB=2048
+    volumes:
+      - "/volume3/Santiago y Armida Producciones:/media:rw"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+```
+
+### New Environment Variables (Epic 7)
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `JELLYFIN_PUBLIC_URL` | URL for "Watch in Jellyfin" links (external users) | `https://jellyfin.losbisquets.xyz` |
+| `CORS_ORIGIN` | Comma-separated allowed origins | `http://10.0.0.4:3000,https://syap.losbisquets.xyz` |
+
+### Building Remote Images
+
+```bash
+# Login to GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u jeremiah-mitchell --password-stdin
+
+# Build API with :remote tag
+docker build --platform linux/amd64 \
+  -f apps/api/Dockerfile \
+  -t ghcr.io/jeremiah-mitchell/family-video-tagger-api:remote .
+docker push ghcr.io/jeremiah-mitchell/family-video-tagger-api:remote
+
+# Build Web with :remote tag (note the different API URL)
+docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_API_URL=https://api-syap.losbisquets.xyz \
+  -f apps/web/Dockerfile \
+  -t ghcr.io/jeremiah-mitchell/family-video-tagger-web:remote .
+docker push ghcr.io/jeremiah-mitchell/family-video-tagger-web:remote
+```
+
+### Switching Between Local and Remote
+
+**For local network access:**
+```bash
+# Use docker-compose.nas.yml or :latest images
+docker compose -f docker-compose.nas.yml pull
+docker compose -f docker-compose.nas.yml up -d
+```
+
+**For remote/tunnel access:**
+```bash
+# Use docker-compose.remote.yml or :remote images
+docker compose -f docker-compose.remote.yml pull
+docker compose -f docker-compose.remote.yml up -d
+```
+
+### Troubleshooting Remote Access
+
+**Mixed Content Error (HTTPS page loading HTTP resource):**
+- Cause: Web app built with wrong `NEXT_PUBLIC_API_URL`
+- Solution: Rebuild web image with correct HTTPS API URL
+- Check: Browser console shows which URL the app is trying to reach
+
+**CORS Errors:**
+- Cause: API doesn't allow the origin making requests
+- Solution: Add origin to `CORS_ORIGIN` env var (comma-separated)
+- Example: `CORS_ORIGIN=http://10.0.0.4:3000,https://syap.losbisquets.xyz`
+
+**"Watch in Jellyfin" opens wrong URL:**
+- Cause: `JELLYFIN_PUBLIC_URL` not set or incorrect
+- Solution: Set `JELLYFIN_PUBLIC_URL=https://jellyfin.losbisquets.xyz`
+
+**API returns 404 at root:**
+- This is normal - API has no root route
+- Test with `/health` endpoint: `curl https://api-syap.losbisquets.xyz/health`
+
+### Code Changes Summary (Epic 7)
+
+| File | Change |
+|------|--------|
+| `apps/api/src/config/env.validation.ts` | Added `JELLYFIN_PUBLIC_URL` (optional), updated CORS_ORIGIN description |
+| `apps/api/src/config/app-config.service.ts` | `corsOrigin` returns array if comma-separated, added `jellyfinPublicUrl` |
+| `apps/api/src/videos/videos.service.ts` | `getJellyfinUrl()` uses `configService.jellyfinPublicUrl` |
+| `docker-compose.remote.yml` | New file for remote deployment |
+| `docker-compose.nas.yml` | Reference for local deployment |

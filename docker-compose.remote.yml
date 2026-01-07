@@ -1,0 +1,48 @@
+# Remote access deployment docker-compose for UGREEN NAS (10.0.0.4)
+# Configured for Cloudflare Tunnel remote access via syap.losbisquets.xyz
+# Images must be rebuilt with NEXT_PUBLIC_API_URL=https://syap.losbisquets.xyz:3001
+services:
+  web:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-web:remote
+    container_name: family-video-tagger-web
+    ports:
+      - "3000:3000"
+    environment:
+      # Server-side API URL (container-to-container)
+      - API_URL=http://api:3001
+      # Client-side API URL - baked in at build time for remote access
+      - NEXT_PUBLIC_API_URL=https://api-syap.losbisquets.xyz
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/jeremiah-mitchell/family-video-tagger-api:remote
+    container_name: family-video-tagger-api
+    user: "0:0"
+    ports:
+      - "3001:3001"
+    environment:
+      # Jellyfin connection (internal)
+      - JELLYFIN_URL=http://10.0.0.4:8096
+      - JELLYFIN_API_KEY=dcdc8d9b02d449d7a945ed8ae0a51fdf
+      - JELLYFIN_USER=jeremiah
+      - JELLYFIN_LIBRARY_NAME=Santiago y Armida Producciones
+      # Jellyfin public URL for "Watch in Jellyfin" links
+      - JELLYFIN_PUBLIC_URL=https://jellyfin.losbisquets.xyz
+      # Media storage path (inside container)
+      - MEDIA_PATH=/media
+      # API server config
+      - PORT=3001
+      # Allow both local and remote origins
+      - CORS_ORIGIN=http://10.0.0.4:3000,https://syap.losbisquets.xyz,https://api-syap.losbisquets.xyz
+      # Upload limits (default: 2GB)
+      - MAX_UPLOAD_SIZE_MB=2048
+    volumes:
+      # Santiago y Armida Producciones folder on UGREEN NAS
+      - "/volume3/Santiago y Armida Producciones:/media:rw"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

@@ -425,8 +425,11 @@ export class JellyfinService {
     }
 
     if (metadata.date) {
-      // Jellyfin expects ISO 8601 format
-      updatePayload.PremiereDate = metadata.date;
+      // Convert YYYY-MM-DD to Eastern Time noon to avoid date shift
+      // Without timezone, Jellyfin interprets as UTC midnight, which becomes
+      // the previous day in Eastern Time. Setting to noon EST ensures the
+      // date is correct regardless of server timezone.
+      updatePayload.PremiereDate = `${metadata.date}T12:00:00-05:00`;
     }
 
     if (metadata.description) {

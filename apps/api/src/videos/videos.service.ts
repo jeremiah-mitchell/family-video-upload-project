@@ -218,9 +218,10 @@ export class VideosService {
   }
 
   /**
-   * Get Jellyfin base URL for constructing web player links
+   * Get Jellyfin public URL for constructing web player links
+   * Uses JELLYFIN_PUBLIC_URL if set, otherwise falls back to internal URL
    */
   getJellyfinUrl(): string {
-    return this.jellyfinService.getBaseUrl();
+    return this.configService.jellyfinPublicUrl;
   }
 }

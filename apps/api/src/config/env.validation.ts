@@ -32,7 +32,12 @@ export const envSchema = z.object({
   CORS_ORIGIN: z
     .string()
     .default('http://localhost:3000')
-    .describe('Frontend URL for CORS'),
+    .describe('Frontend URL(s) for CORS - comma-separated for multiple origins'),
+
+  JELLYFIN_PUBLIC_URL: z
+    .string()
+    .optional()
+    .describe('Public Jellyfin URL for "Watch in Jellyfin" links (defaults to JELLYFIN_URL)'),
 
   JELLYFIN_USER: z
     .string()

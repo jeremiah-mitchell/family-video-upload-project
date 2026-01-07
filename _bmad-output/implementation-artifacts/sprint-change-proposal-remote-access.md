@@ -82,7 +82,7 @@ Video streaming through Cloudflare Tunnel for personal use is acceptable:
 
 **Acceptance Criteria:**
 - [ ] Add tunnel route: `syap.losbisquets.xyz` → `http://10.0.0.4:3000` (web app)
-- [ ] Add tunnel route: `jellyfin-syap.losbisquets.xyz` → `http://10.0.0.4:8096` (Jellyfin)
+- [ ] Add tunnel route: `jellyfin.losbisquets.xyz` → `http://10.0.0.4:8096` (Jellyfin)
 - [ ] Cloudflare Access policy applied to both routes (existing MFA)
 - [ ] Routes use NAS IP (`10.0.0.4`) since cloudflared runs on minipc
 
@@ -92,7 +92,7 @@ Video streaming through Cloudflare Tunnel for personal use is acceptable:
 ingress:
   - hostname: syap.losbisquets.xyz
     service: http://10.0.0.4:3000
-  - hostname: jellyfin-syap.losbisquets.xyz
+  - hostname: jellyfin.losbisquets.xyz
     service: http://10.0.0.4:8096
 ```
 
@@ -104,7 +104,7 @@ ingress:
 **Acceptance Criteria:**
 - [ ] API CORS allows `https://syap.losbisquets.xyz` origin
 - [ ] Frontend `NEXT_PUBLIC_API_URL` points to `https://syap.losbisquets.xyz/api` (or proxied)
-- [ ] "Watch in Jellyfin" links use `https://jellyfin-syap.losbisquets.xyz`
+- [ ] "Watch in Jellyfin" links use `https://jellyfin.losbisquets.xyz`
 - [ ] Environment variables documented for remote deployment
 
 **Code Changes:**
@@ -155,7 +155,7 @@ Direct implementation by development team.
 2. Cloudflare Access MFA prompts on first access
 3. Video list loads (API connection working)
 4. Save metadata works end-to-end
-5. "Watch in Jellyfin" opens `https://jellyfin-syap.losbisquets.xyz`
+5. "Watch in Jellyfin" opens `https://jellyfin.losbisquets.xyz`
 
 ### Dependencies
 - Access to cloudflared config on minipc
@@ -166,10 +166,65 @@ Direct implementation by development team.
 
 ## Approval
 
-**Status:** Pending user approval
+**Status:** ✅ Approved (2026-01-06)
 
 **Next Steps After Approval:**
 1. Update sprint-status.yaml with Epic 7 stories
 2. Begin Story 7.1 (tunnel configuration)
 3. Implement Story 7.2 (API/frontend updates)
 4. Execute Story 7.3 (rebuild and deploy)
+
+---
+
+## Implementation Record
+
+**Completed:** 2026-01-06
+
+### Story 7.1: Configure Cloudflare Tunnel Routes ✅
+- User configured cloudflared on minipc with routes:
+  - `syap.losbisquets.xyz` → `http://10.0.0.4:3000`
+  - `api-syap.losbisquets.xyz` → `http://10.0.0.4:3001` (added for API)
+  - `jellyfin.losbisquets.xyz` → `http://10.0.0.4:8096`
+
+### Story 7.2: Update API CORS and Frontend URL Configuration ✅
+**Files Changed:**
+| File | Change |
+|------|--------|
+| `apps/api/src/config/env.validation.ts` | Added `JELLYFIN_PUBLIC_URL` optional env var |
+| `apps/api/src/config/app-config.service.ts` | `corsOrigin` now supports comma-separated origins, added `jellyfinPublicUrl` |
+| `apps/api/src/videos/videos.service.ts` | `getJellyfinUrl()` returns public URL for external Jellyfin links |
+
+**New Environment Variables:**
+- `JELLYFIN_PUBLIC_URL` - External Jellyfin URL for "Watch in Jellyfin" links
+- `CORS_ORIGIN` - Now supports comma-separated multiple origins
+
+### Story 7.3: Rebuild and Deploy with Remote Configuration ✅
+**Docker Images Built:**
+- `ghcr.io/jeremiah-mitchell/family-video-tagger-web:remote` - Web app with `NEXT_PUBLIC_API_URL=https://api-syap.losbisquets.xyz`
+- `ghcr.io/jeremiah-mitchell/family-video-tagger-api:remote` - API (same code, different tag for clarity)
+
+**New Files:**
+- `docker-compose.remote.yml` - Compose file for Cloudflare Tunnel deployment
+- `docker-compose.nas.yml` - Compose file for local network deployment (`:latest` images)
+
+### Key Technical Decisions
+
+1. **Separate API tunnel route** - Added `api-syap.losbisquets.xyz` because the web app makes browser requests to the API. Using the same hostname with a port (`:3001`) doesn't work through Cloudflare Tunnel.
+
+2. **Two image tags** - Created `:remote` tag for tunnel access because Next.js `NEXT_PUBLIC_*` variables are baked in at build time. Cannot change API URL at runtime.
+
+3. **Comma-separated CORS** - Modified `corsOrigin` to split on commas, allowing multiple origins in a single env var. This keeps compose files cleaner.
+
+### Deployment Notes
+
+For remote access via Cloudflare Tunnel, use:
+```bash
+docker compose -f docker-compose.remote.yml pull
+docker compose -f docker-compose.remote.yml up -d
+```
+
+For local network access, use:
+```bash
+docker compose -f docker-compose.nas.yml pull
+docker compose -f docker-compose.nas.yml up -d
+```

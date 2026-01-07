@@ -1,23 +1,35 @@
 /* Global styles - using system font stack as per architecture */
 
 :root {
-  /* Colors */
-  --color-primary: #007bff;
-  --color-primary-dark: #0056b3;
-  --color-background: #f8f9fa;
-  --color-border: #e9ecef;
-  --color-text: #212529;
-  --color-text-muted: #6c757d;
-  --color-error: #dc3545;
-  --color-white: #ffffff;
+  /* Colors - Apple iOS design system */
+  --color-primary: #007AFF;        /* iOS blue */
+  --color-primary-dark: #0056D6;
+  --color-background: #F2F2F7;     /* iOS light gray */
+  --color-border: #E5E5EA;         /* iOS separator gray */
+  --color-text: #1C1C1E;           /* iOS primary label */
+  --color-text-muted: #8E8E93;     /* iOS secondary label */
+  --color-error: #FF3B30;          /* iOS red */
+  --color-success: #34C759;        /* iOS green */
+  --color-white: #FFFFFF;
 
-  /* Spacing */
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
+  /* Spacing - larger for senior accessibility */
+  --spacing-xs: 4px;
+  --spacing-sm: 12px;
+  --spacing-md: 20px;
+  --spacing-lg: 32px;
 
-  /* Border radius */
-  --radius-md: 8px;
+  /* Border radius - Apple-style rounded corners */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Shadows - subtle Apple-style shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Min touch target size for accessibility */
+  --touch-target-min: 44px;
 }
 
 * {
