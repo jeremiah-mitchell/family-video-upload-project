@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { writeFile, rename, mkdir, readFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join, dirname, basename, extname, resolve } from 'path';
 import type { VideoMetadata } from '@family-video/shared';
 import { AppConfigService } from '../config';
@@ -220,6 +220,23 @@ export class NfoService {
       return this.parseNfoXml(content);
     } catch (error) {
       this.logger.warn(`Failed to read NFO: ${nfoPath}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Synchronously read NFO file by direct path (for tagging checks)
+   */
+  readNfoSync(nfoPath: string): VideoMetadata | null {
+    if (!existsSync(nfoPath)) {
+      return null;
+    }
+
+    try {
+      const content = readFileSync(nfoPath, 'utf-8');
+      return this.parseNfoXml(content);
+    } catch (error) {
+      this.logger.warn(`Failed to read NFO sync: ${nfoPath}`, error);
       return null;
     }
   }

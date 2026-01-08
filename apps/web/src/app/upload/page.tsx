@@ -30,6 +30,7 @@ export default function UploadPage() {
   const [success, setSuccess] = useState<UploadSuccess | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [config, setConfig] = useState<UploadConfigResponse | null>(null);
+  const [dvdDescription, setDvdDescription] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -219,7 +220,8 @@ export default function UploadPage() {
             if (p === 100) {
               setUploadState('processing');
             }
-          }
+          },
+          dvdDescription || undefined
         );
 
         setSuccess({ extractedFiles });
@@ -242,6 +244,7 @@ export default function UploadPage() {
     setSuccess(null);
     setUploadState('idle');
     setProgress(0);
+    setDvdDescription('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -435,6 +438,23 @@ export default function UploadPage() {
                       ×
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* DVD Description Field */}
+              {selectedFolder && !isUploading && (
+                <div className={styles.descriptionContainer}>
+                  <label htmlFor="dvd-description" className={styles.descriptionLabel}>
+                    DVD Case Notes (optional)
+                  </label>
+                  <textarea
+                    id="dvd-description"
+                    className={styles.descriptionInput}
+                    placeholder="Enter any notes from the DVD case..."
+                    value={dvdDescription}
+                    onChange={(e) => setDvdDescription(e.target.value)}
+                    rows={3}
+                  />
                 </div>
               )}
 

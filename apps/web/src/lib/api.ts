@@ -357,12 +357,14 @@ export async function uploadDvd(
  * @param files Array of files from the VIDEO_TS folder
  * @param folderName Name of the folder being uploaded
  * @param onProgress Callback for upload progress (0-100)
+ * @param description Optional description (from DVD case note) to add to NFO files
  * @returns Array of extracted filenames
  */
 export async function uploadDvdFolder(
   files: File[],
   folderName: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  description?: string
 ): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -412,6 +414,9 @@ export async function uploadDvdFolder(
       formData.append('files', file, relativePath);
     }
     formData.append('folderName', folderName);
+    if (description) {
+      formData.append('description', description);
+    }
 
     // Send request
     xhr.open('POST', `${API_BASE}/upload/dvd-folder`);

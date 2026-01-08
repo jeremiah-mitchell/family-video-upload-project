@@ -3,9 +3,10 @@ import { UploadController } from './upload.controller';
 import { UploadService } from './upload.service';
 import { JellyfinModule } from '../jellyfin';
 import { AppConfigModule } from '../config';
+import { NfoModule } from '../nfo';
 
 @Module({
-  imports: [JellyfinModule, AppConfigModule],
+  imports: [JellyfinModule, AppConfigModule, NfoModule],
   controllers: [UploadController],
   providers: [UploadService],
   exports: [UploadService],

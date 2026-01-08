@@ -76,7 +76,8 @@ export class VideosService {
   }
 
   /**
-   * Check if a video has an associated NFO file
+   * Check if a video is fully tagged (has NFO with required fields)
+   * Required fields: title (non-empty), date, and at least one person
    * Maps Jellyfin paths to container-relative paths using MEDIA_PATH
    */
   private checkIfTagged(videoPath: string): boolean {
@@ -98,13 +99,35 @@ export class VideosService {
     const name = basename(containerPath, extname(containerPath));
     const nfoPath = join(dir, `${name}.nfo`);
 
-    const exists = existsSync(nfoPath);
-
-    if (exists) {
-      this.logger.debug(`NFO found: ${nfoPath}`);
+    if (!existsSync(nfoPath)) {
+      return false;
     }
 
-    return exists;
+    // NFO exists - now check if it has required fields
+    try {
+      const metadata = this.nfoService.readNfoSync(nfoPath);
+      if (!metadata) {
+        return false;
+      }
+
+      // Required: non-empty title, date, and at least one person
+      const hasTitle = !!(metadata.title && metadata.title.trim().length > 0);
+      const hasDate = !!metadata.date;
+      const hasPeople = !!(metadata.people && metadata.people.length > 0);
+
+      const isComplete = hasTitle && hasDate && hasPeople;
+
+      if (isComplete) {
+        this.logger.debug(`NFO complete: ${nfoPath}`);
+      } else {
+        this.logger.debug(`NFO incomplete: ${nfoPath} (title: ${hasTitle}, date: ${hasDate}, people: ${hasPeople})`);
+      }
+
+      return isComplete;
+    } catch (error) {
+      this.logger.warn(`Failed to read NFO for tagging check: ${nfoPath}`, error);
+      return false;
+    }
   }
 
   /**

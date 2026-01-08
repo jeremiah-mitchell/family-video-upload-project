@@ -222,6 +222,7 @@ export class UploadController {
   async uploadDvdFolder(
     @UploadedFiles() files: Express.Multer.File[],
     @Body('folderName') folderName: string,
+    @Body('description') description?: string,
   ): Promise<ApiSuccessResponse<{ extractedFiles: string[] }>> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files uploaded');
@@ -254,6 +255,8 @@ export class UploadController {
       const extractedFiles = await this.uploadService.processUploadedDvdFolder(
         files,
         folderName,
+        undefined, // onProgress callback
+        description, // optional description for NFO files
       );
 
       return {

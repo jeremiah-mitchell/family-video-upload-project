@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import { UploadResult, DvdChapter, DvdExtractionProgress } from '@family-video/shared';
 import { AppConfigService } from '../config';
 import { JellyfinService } from '../jellyfin';
+import { NfoService } from '../nfo';
 
 const execFileAsync = promisify(execFile);
 
@@ -35,6 +36,7 @@ export class UploadService {
   constructor(
     private readonly configService: AppConfigService,
     private readonly jellyfinService: JellyfinService,
+    private readonly nfoService: NfoService,
   ) {
     this.mediaPath = this.configService.mediaPath;
   }
@@ -265,11 +267,13 @@ export class UploadService {
   /**
    * Extract chapters from DVD VIDEO_TS folder to MP4 files
    * This is a long-running operation - consider using background job in production
+   * @param description Optional description to write to NFO files for each extracted chapter
    */
   async extractDvdChapters(
     dvdPath: string,
     outputPrefix: string,
     onProgress?: (progress: DvdExtractionProgress) => void,
+    description?: string,
   ): Promise<string[]> {
     // Verify VIDEO_TS structure
     const videoTsPath = join(dvdPath, 'VIDEO_TS');
@@ -359,6 +363,22 @@ export class UploadService {
           this.logger.log(
             `Extracted chapter ${chapter.index}: ${outputFilename} (${Math.round(stats.size / (1024 * 1024))}MB)`,
           );
+
+          // Create NFO file with description if provided
+          if (description) {
+            try {
+              await this.nfoService.writeNfo(outputPath, {
+                title: `${outputPrefix} - Chapter ${String(chapter.index).padStart(2, '0')}`,
+                description,
+                people: [],
+                tags: [],
+              });
+              this.logger.debug(`Created NFO for ${outputFilename}`);
+            } catch (nfoErr) {
+              this.logger.warn(`Failed to create NFO for ${outputFilename}`, nfoErr);
+              // Don't fail extraction if NFO creation fails
+            }
+          }
         } else {
           this.logger.warn(`Chapter ${chapter.index} extraction produced invalid file`);
           await unlink(outputPath).catch(() => {});
@@ -500,11 +520,13 @@ export class UploadService {
   /**
    * Process uploaded DVD folder files
    * Reconstructs the folder structure and extracts chapters
+   * @param description Optional description from DVD case note to write to NFO files
    */
   async processUploadedDvdFolder(
     files: Express.Multer.File[],
     folderName: string,
     onProgress?: (progress: DvdExtractionProgress) => void,
+    description?: string,
   ): Promise<string[]> {
     // Create temp directory for reconstructing DVD structure
     const tempDir = join(this.mediaPath, `.tmp_dvd_folder_${Date.now()}`);
@@ -563,6 +585,7 @@ export class UploadService {
         tempDir,
         sanitizedPrefix,
         onProgress,
+        description,
       );
 
       return extractedFiles;
