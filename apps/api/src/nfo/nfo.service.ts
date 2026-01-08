@@ -61,6 +61,9 @@ export class NfoService {
     // Add genre for home videos
     lines.push('  <genre>Home Video</genre>');
 
+    // Always set Santiago Arcaraz as director
+    lines.push('  <director>Santiago Arcaraz</director>');
+
     lines.push('</movie>');
 
     return lines.join('\n');
