@@ -10,6 +10,7 @@ import {
   UploadedFiles,
   BadRequestException,
   Body,
+  OnModuleInit,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -18,6 +19,7 @@ import { UploadService } from './upload.service';
 import { AppConfigService } from '../config';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { mkdirSync, existsSync } from 'fs';
 
 /** Response type for upload config endpoint */
 interface UploadConfigResponse {
@@ -25,14 +27,31 @@ interface UploadConfigResponse {
   supportedTypes: string[];
 }
 
+// Ensure upload temp directories exist at module load time
+const uploadTempDir = join(tmpdir(), 'family-video-uploads');
+const dvdFolderTempDir = join(uploadTempDir, 'dvd-folder');
+
+if (!existsSync(uploadTempDir)) {
+  mkdirSync(uploadTempDir, { recursive: true });
+}
+if (!existsSync(dvdFolderTempDir)) {
+  mkdirSync(dvdFolderTempDir, { recursive: true });
+}
+
 @Controller('upload')
-export class UploadController {
+export class UploadController implements OnModuleInit {
   private readonly logger = new Logger(UploadController.name);
 
   constructor(
     private readonly uploadService: UploadService,
     private readonly configService: AppConfigService,
   ) {}
+
+  onModuleInit() {
+    // Log temp directory paths for debugging
+    this.logger.log(`Upload temp directory: ${uploadTempDir}`);
+    this.logger.log(`DVD folder temp directory: ${dvdFolderTempDir}`);
+  }
 
   /**
    * Get upload configuration (max size, supported types)

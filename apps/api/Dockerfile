@@ -45,10 +45,11 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 
-# Install runtime dependencies for lsdvd
+# Install runtime dependencies for lsdvd and healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libdvdread8 \
     xz-utils \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy pre-downloaded static ffmpeg binary
