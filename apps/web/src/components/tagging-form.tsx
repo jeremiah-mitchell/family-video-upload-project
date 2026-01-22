@@ -45,7 +45,27 @@ export interface TaggingFormProps {
   jellyfinUrl: string;
   onSave: (videoId: string, metadata: VideoMetadata) => Promise<void>;
   existingMetadata?: VideoMetadata | null;
+  lastSavedMetadata?: VideoMetadata | null;
   isLoading?: boolean;
+  /** Hide "Watch in Browser" button when video is currently playing on TV */
+  isNowPlaying?: boolean;
+}
+
+/**
+ * Increment the number at the end of a title, or add " 2" if none exists
+ * Examples:
+ *   "Christmas 2024" -> "Christmas 2024 2"
+ *   "Video 1" -> "Video 2"
+ *   "Video 10" -> "Video 11"
+ */
+function incrementTitle(title: string): string {
+  const match = title.match(/^(.+?)(\s+)(\d+)$/);
+  if (match) {
+    const [, prefix, space, numStr] = match;
+    const nextNum = parseInt(numStr, 10) + 1;
+    return `${prefix}${space}${nextNum}`;
+  }
+  return `${title} 2`;
 }
 
 export function TaggingForm({
@@ -53,7 +73,9 @@ export function TaggingForm({
   jellyfinUrl,
   onSave,
   existingMetadata,
+  lastSavedMetadata,
   isLoading = false,
+  isNowPlaying = false,
 }: TaggingFormProps) {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
@@ -97,6 +119,23 @@ export function TaggingForm({
     const watchUrl = `${jellyfinUrl}/web/index.html#!/details?id=${video.id}`;
     window.open(watchUrl, '_blank', 'noopener,noreferrer');
   }, [video, jellyfinUrl]);
+
+  const handleCopyFromPrevious = useCallback(() => {
+    if (!lastSavedMetadata) return;
+
+    // Copy all fields, incrementing the title
+    setTitle(incrementTitle(lastSavedMetadata.title));
+    setDate(lastSavedMetadata.date || '');
+    // Map full names from NFO back to display names for UI
+    const displayNames = (lastSavedMetadata.people || []).map(
+      (fullName) => FULL_NAME_TO_DISPLAY[fullName] || fullName
+    );
+    setPeople(displayNames);
+    setTags(lastSavedMetadata.tags || []);
+    setRating(lastSavedMetadata.rating?.toString() || '');
+    setDescription(lastSavedMetadata.description || '');
+    setTitleError(null);
+  }, [lastSavedMetadata]);
 
   const handlePersonToggle = useCallback((person: string) => {
     setPeople((prev) =>
@@ -178,14 +217,27 @@ export function TaggingForm({
     <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.header}>
         <div className={styles.videoTitle}>{video.filename}</div>
-        <button
-          type="button"
-          className={styles.watchButton}
-          onClick={handleWatchClick}
-        >
-          <span aria-hidden="true">▶</span>
-          Watch in Jellyfin
-        </button>
+        <div className={styles.headerButtons}>
+          {lastSavedMetadata && (
+            <button
+              type="button"
+              className={styles.copyButton}
+              onClick={handleCopyFromPrevious}
+            >
+              Copy Previous
+            </button>
+          )}
+          {!isNowPlaying && (
+            <button
+              type="button"
+              className={styles.watchButton}
+              onClick={handleWatchClick}
+            >
+              <span aria-hidden="true">▶</span>
+              Watch in Browser
+            </button>
+          )}
+        </div>
       </div>
 
       <div className={styles.content}>

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { Video, VideoMetadata } from '@family-video/shared';
 import { TaggingForm } from '../../../../components/tagging-form';
 import { ToastContainer, useToasts } from '../../../../components/toast';
-import { getVideos, getConfig, getVideoMetadata, saveVideoMetadata, ApiError } from '../../../../lib/api';
+import { getVideos, getConfig, getVideoMetadata, saveVideoMetadata, getNowPlaying, ApiError } from '../../../../lib/api';
 import styles from './page.module.css';
 
 export default function TagVideoPage() {
@@ -22,6 +22,7 @@ export default function TagVideoPage() {
   const [existingMetadata, setExistingMetadata] = useState<VideoMetadata | null>(null);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [lastSavedMetadata, setLastSavedMetadata] = useState<VideoMetadata | null>(null);
+  const [nowPlayingId, setNowPlayingId] = useState<string | null>(null);
 
   const { toasts, dismissToast, showSuccess, showError } = useToasts();
 
@@ -32,13 +33,15 @@ export default function TagVideoPage() {
         setIsLoading(true);
         setError(null);
 
-        const [videosData, configData] = await Promise.all([
+        const [videosData, configData, nowPlaying] = await Promise.all([
           getVideos(),
           getConfig(),
+          getNowPlaying().catch(() => null),
         ]);
 
         setAllVideos(videosData);
         setJellyfinUrl(configData.jellyfinUrl);
+        setNowPlayingId(nowPlaying?.id ?? null);
 
         // Find the video by ID
         const foundVideo = videosData.find((v) => v.id === videoId);
@@ -178,6 +181,7 @@ export default function TagVideoPage() {
           existingMetadata={existingMetadata}
           lastSavedMetadata={lastSavedMetadata}
           isLoading={isLoadingMetadata}
+          isNowPlaying={nowPlayingId === videoId}
         />
       </div>
 
