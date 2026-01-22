@@ -560,10 +560,10 @@ export default function UploadPage() {
     <main className={styles.main}>
       {/* Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>Upload Videos</h1>
         <Link href="/" className={styles.backLink}>
-          Back to Tagging
+          <span aria-hidden="true">&larr;</span> Home
         </Link>
+        <h1 className={styles.title}>Upload Videos</h1>
       </div>
 
       <div className={styles.container}>

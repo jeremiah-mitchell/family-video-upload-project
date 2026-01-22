@@ -34,26 +34,19 @@
 .backLink {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  font-size: 1.25rem;
+  gap: var(--spacing-xs);
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--color-primary, #007AFF);
-  background-color: var(--color-white);
-  border-radius: var(--radius-md, 12px);
-  box-shadow: var(--shadow-sm);
   text-decoration: none;
-  transition: all 0.2s ease;
+  padding: var(--spacing-sm);
+  margin: calc(-1 * var(--spacing-sm));
+  border-radius: var(--radius-sm, 8px);
+  transition: background-color 0.2s ease;
 }
 
 .backLink:hover {
-  background-color: var(--color-background);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.backLink:active {
-  transform: translateY(0);
+  background-color: var(--color-background, #F2F2F7);
 }
 
 .panelHeader {

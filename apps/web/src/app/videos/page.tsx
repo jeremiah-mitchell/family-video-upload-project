@@ -75,8 +75,8 @@ export default function VideosPage() {
       <section className={styles.listPanel}>
         <div className={styles.panelHeaderRow}>
           <div className={styles.headerLeft}>
-            <Link href="/" className={styles.backLink} aria-label="Back to home">
-              <span aria-hidden="true">&larr;</span>
+            <Link href="/" className={styles.backLink}>
+              <span aria-hidden="true">&larr;</span> Home
             </Link>
             <h2 className={styles.panelHeader}>Videos</h2>
           </div>
