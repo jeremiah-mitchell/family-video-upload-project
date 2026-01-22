@@ -100,40 +100,50 @@ export default function Home() {
         <p className={styles.subtitle}>Let's preserve some memories today</p>
       </section>
 
-      {/* Now Playing Section - Hero when active */}
-      {hasNowPlaying && (
-        <section className={styles.nowPlayingSection}>
-          <div className={styles.nowPlayingLabel}>Now Playing</div>
-          <div className={styles.nowPlayingCard}>
-            {nowPlaying.thumbnailUrl && (
-              <img
-                src={buildThumbnailUrl(nowPlaying.thumbnailUrl)}
-                alt=""
-                className={styles.nowPlayingThumbnail}
-              />
-            )}
-            <div className={styles.nowPlayingInfo}>
-              <h2 className={styles.nowPlayingTitle}>{nowPlaying.name}</h2>
-              {nowPlaying.deviceName && (
-                <p className={styles.nowPlayingDevice}>
-                  Playing on: {nowPlaying.deviceName}
-                </p>
+      {/* Now Playing Section */}
+      <section className={styles.nowPlayingSection}>
+        {hasNowPlaying ? (
+          <>
+            <div className={styles.nowPlayingLabel}>Now Playing</div>
+            <div className={styles.nowPlayingCard}>
+              {nowPlaying.thumbnailUrl && (
+                <img
+                  src={buildThumbnailUrl(nowPlaying.thumbnailUrl)}
+                  alt=""
+                  className={styles.nowPlayingThumbnail}
+                />
               )}
+              <div className={styles.nowPlayingInfo}>
+                <h2 className={styles.nowPlayingTitle}>{nowPlaying.name}</h2>
+                {nowPlaying.deviceName && (
+                  <p className={styles.nowPlayingDevice}>
+                    Playing on: {nowPlaying.deviceName}
+                  </p>
+                )}
+              </div>
+              <Link
+                href={`/videos?select=${nowPlaying.id}`}
+                className={styles.tagButton}
+              >
+                Tag This Video
+              </Link>
             </div>
-            <Link
-              href={`/videos?select=${nowPlaying.id}`}
-              className={styles.tagButton}
-            >
-              Tag This Video
-            </Link>
-          </div>
-        </section>
-      )}
+          </>
+        ) : !isNowPlayingLoading ? (
+          <>
+            <div className={styles.nowPlayingLabelIdle}>Now Playing</div>
+            <div className={styles.nowPlayingIdle}>
+              <p className={styles.idleText}>No video playing right now</p>
+              <p className={styles.idleHint}>Start a video on your TV and it will appear here</p>
+            </div>
+          </>
+        ) : null}
+      </section>
 
       {/* Start Watching Section - Only show when nothing is playing */}
       {!hasNowPlaying && !isNowPlayingLoading && (
         <section className={styles.startWatchingSection}>
-          <h2 className={styles.sectionTitle}>Start Watching</h2>
+          <h2 className={styles.sectionTitle}>Watch on TV</h2>
           <div className={styles.startWatchingCard}>
             <div className={styles.steps}>
               <div className={styles.step}>
@@ -149,20 +159,20 @@ export default function Home() {
                 <span className={styles.stepText}>Come back here to tag it!</span>
               </div>
             </div>
+            <div className={styles.divider}>
+              <span>No TV?</span>
+            </div>
             {jellyfinUrl && (
               <a
                 href={jellyfinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.jellyfinButton}
+                className={styles.webBrowserLink}
               >
-                Open Jellyfin
+                Watch in your web browser
                 <span className={styles.externalIcon} aria-hidden="true">&#8599;</span>
               </a>
             )}
-            <div className={styles.divider}>
-              <span>or</span>
-            </div>
             <Link href="/videos" className={styles.browseButton}>
               Browse Videos to Tag
             </Link>
@@ -210,10 +220,10 @@ export default function Home() {
         <h2 className={styles.sectionTitle}>Add New Videos</h2>
         <div className={styles.uploadCard}>
           <p className={styles.uploadText}>
-            Have DVDs to add to the collection?
+            Have video files to add to the collection?
           </p>
           <Link href="/upload" className={styles.uploadButton}>
-            Upload Videos
+            Upload Video
           </Link>
         </div>
       </section>
