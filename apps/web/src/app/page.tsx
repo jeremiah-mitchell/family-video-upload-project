@@ -122,7 +122,7 @@ export default function Home() {
                 )}
               </div>
               <Link
-                href={`/videos?select=${nowPlaying.id}`}
+                href={`/videos/${nowPlaying.id}/tag`}
                 className={styles.tagButton}
               >
                 Tag This Video
