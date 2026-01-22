@@ -80,9 +80,6 @@ export default function VideosPage() {
             </Link>
             <h2 className={styles.panelHeader}>Videos</h2>
           </div>
-          <Link href="/upload" className={styles.addButton}>
-            + Add Video
-          </Link>
         </div>
         <div className={styles.panelContent}>
           <div className={styles.videoListWrapper}>
