@@ -151,8 +151,8 @@ export default function TagVideoPage() {
       <main className={styles.main}>
         <div className={styles.errorContainer}>
           <p className={styles.errorText}>{error}</p>
-          <Link href="/videos" className={styles.backButton}>
-            Back to Videos
+          <Link href="/" className={styles.backButton}>
+            Back to Home
           </Link>
         </div>
       </main>
@@ -162,8 +162,8 @@ export default function TagVideoPage() {
   return (
     <main className={styles.main}>
       <header className={styles.header}>
-        <Link href="/videos" className={styles.backLink}>
-          <span aria-hidden="true">&larr;</span> Videos
+        <Link href="/" className={styles.backLink}>
+          <span aria-hidden="true">&larr;</span> Home
         </Link>
         <div className={styles.headerInfo}>
           <span className={styles.remainingCount}>{untaggedCount} left to tag</span>
