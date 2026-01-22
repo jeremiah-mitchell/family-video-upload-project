@@ -112,27 +112,29 @@ export class VideosController {
     const username = this.configService.jellyfinUser;
 
     try {
-      const nowPlaying = await this.jellyfinService.getNowPlaying(username);
+      const result = await this.jellyfinService.getNowPlaying(username);
 
-      if (!nowPlaying) {
+      if (!result) {
         return {
           data: null,
           message: 'No video currently playing',
         };
       }
 
-      const hasImage = !!nowPlaying.ImageTags?.Primary;
+      const { item, deviceName } = result;
+      const hasImage = !!item.ImageTags?.Primary;
 
       return {
         data: {
-          id: nowPlaying.Id,
-          name: nowPlaying.Name,
+          id: item.Id,
+          name: item.Name,
           thumbnailUrl: this.jellyfinService.getThumbnailUrl(
-            nowPlaying.Id,
+            item.Id,
             hasImage,
           ),
+          deviceName,
         },
-        message: `Now playing: ${nowPlaying.Name}`,
+        message: `Now playing: ${item.Name}`,
       };
     } catch (error) {
       this.logger.error('Failed to get now playing', error);

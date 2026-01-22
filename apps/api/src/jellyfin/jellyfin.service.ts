@@ -57,12 +57,21 @@ interface JellyfinSession {
   Id: string;
   UserId: string;
   UserName: string;
+  DeviceName?: string;
   NowPlayingItem?: JellyfinItem;
   PlayState?: {
     PositionTicks?: number;
     CanSeek?: boolean;
     IsPaused?: boolean;
   };
+}
+
+/**
+ * Now playing result with device info
+ */
+export interface NowPlayingResult {
+  item: JellyfinItem;
+  deviceName?: string;
 }
 
 /**
@@ -342,7 +351,13 @@ export class JellyfinService {
       return this.refreshLibrary();
     }
 
-    const url = `${this.baseUrl}/Items/${libraryId}/Refresh`;
+    // Use full metadata refresh to pick up NFO files for new items
+    const params = new URLSearchParams({
+      MetadataRefreshMode: 'FullRefresh',
+      ImageRefreshMode: 'Default',
+      ReplaceAllMetadata: 'false', // Only replace for items without metadata
+    });
+    const url = `${this.baseUrl}/Items/${libraryId}/Refresh?${params.toString()}`;
     this.logger.debug(`Triggering Home Videos library refresh (${libraryId})`);
 
     try {
@@ -355,7 +370,7 @@ export class JellyfinService {
       if (!response.ok) {
         this.logger.warn(`Library refresh returned ${response.status}`);
       } else {
-        this.logger.log('Home Videos library refresh triggered');
+        this.logger.log('Home Videos library refresh triggered with FullRefresh');
       }
     } catch (error) {
       // Log but don't throw - refresh is best-effort
@@ -521,7 +536,7 @@ export class JellyfinService {
    * Get currently playing item for a specific user
    * Uses Jellyfin Sessions API to find active playback
    */
-  async getNowPlaying(username: string): Promise<JellyfinItem | null> {
+  async getNowPlaying(username: string): Promise<NowPlayingResult | null> {
     const url = `${this.baseUrl}/Sessions`;
     this.logger.debug(`Fetching sessions for now playing check`);
 
@@ -552,9 +567,12 @@ export class JellyfinService {
       }
 
       this.logger.debug(
-        `Found now playing for ${username}: ${userSession.NowPlayingItem.Name}`,
+        `Found now playing for ${username}: ${userSession.NowPlayingItem.Name} on ${userSession.DeviceName}`,
       );
-      return userSession.NowPlayingItem;
+      return {
+        item: userSession.NowPlayingItem,
+        deviceName: userSession.DeviceName,
+      };
     } catch (error) {
       this.logger.warn(`Error fetching sessions`, error);
       return null;

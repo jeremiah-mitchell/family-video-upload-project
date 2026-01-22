@@ -1,27 +1,30 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import type { Video, VideoMetadata } from '@family-video/shared';
-import { VideoList } from '../components/video-list';
-import { FilterDropdown, type FilterValue } from '../components/filter-dropdown';
-import { TaggingForm } from '../components/tagging-form';
-import { ToastContainer, useToasts } from '../components/toast';
-import { NowPlaying } from '../components/now-playing';
-import { getVideos, getConfig, getVideoMetadata, saveVideoMetadata, ApiError } from '../lib/api';
+import type { Video, NowPlayingVideo } from '@family-video/shared';
+import { getVideos, getConfig, getNowPlaying, ApiError } from '../lib/api';
 import styles from './page.module.css';
+
+/** Polling interval for now playing (10 seconds) */
+const POLL_INTERVAL_MS = 10000;
+
+/** API base URL for constructing full thumbnail URLs */
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+/** Build full thumbnail URL from relative path */
+function buildThumbnailUrl(relativePath: string | undefined): string | undefined {
+  if (!relativePath) return undefined;
+  return `${API_BASE}${relativePath}`;
+}
 
 export default function Home() {
   const [videos, setVideos] = useState<Video[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterValue>('untagged');
   const [jellyfinUrl, setJellyfinUrl] = useState('');
-  const [existingMetadata, setExistingMetadata] = useState<VideoMetadata | null>(null);
-  const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
-
-  const { toasts, dismissToast, showSuccess, showError } = useToasts();
+  const [nowPlaying, setNowPlaying] = useState<NowPlayingVideo | null>(null);
+  const [isNowPlayingLoading, setIsNowPlayingLoading] = useState(true);
 
   // Fetch videos and config on mount
   useEffect(() => {
@@ -42,8 +45,6 @@ export default function Home() {
           setError(err.details || err.message);
         } else if (err instanceof TypeError) {
           setError('Could not connect to server. Please check your connection.');
-        } else if (err instanceof DOMException && err.name === 'AbortError') {
-          setError('Request timed out. Please try again.');
         } else if (err instanceof Error) {
           setError(err.message);
         } else {
@@ -57,162 +58,165 @@ export default function Home() {
     init();
   }, []);
 
-  // Load existing metadata when a video is selected
-  useEffect(() => {
-    async function loadMetadata() {
-      if (!selectedVideo) {
-        setExistingMetadata(null);
-        return;
-      }
-
-      // Only load metadata if the video is tagged
-      if (!selectedVideo.isTagged) {
-        setExistingMetadata(null);
-        return;
-      }
-
-      try {
-        setIsLoadingMetadata(true);
-        const metadata = await getVideoMetadata(selectedVideo.id);
-        setExistingMetadata(metadata);
-      } catch (err) {
-        // Non-critical error - just log and continue
-        console.warn('Failed to load metadata:', err);
-        setExistingMetadata(null);
-      } finally {
-        setIsLoadingMetadata(false);
-      }
+  // Fetch now playing status
+  const fetchNowPlaying = useCallback(async () => {
+    try {
+      const result = await getNowPlaying();
+      setNowPlaying(result);
+    } catch (error) {
+      console.warn('Failed to fetch now playing:', error);
+      setNowPlaying(null);
+    } finally {
+      setIsNowPlayingLoading(false);
     }
-
-    loadMetadata();
-  }, [selectedVideo?.id, selectedVideo?.isTagged]);
-
-  // Client-side filtering based on isTagged property
-  const filteredVideos = useMemo(() => {
-    if (filter === 'all') return videos;
-    return videos.filter((v) => (filter === 'tagged' ? v.isTagged : !v.isTagged));
-  }, [videos, filter]);
-
-  // Progress counter
-  const taggedCount = useMemo(() => videos.filter((v) => v.isTagged).length, [videos]);
-  const totalCount = videos.length;
-
-  const handleVideoSelect = useCallback((video: Video) => {
-    setSelectedVideo(video);
   }, []);
 
-  const handleFilterChange = useCallback((newFilter: FilterValue) => {
-    setFilter(newFilter);
-    // Clear selection if selected video is not in filtered list
-    if (selectedVideo) {
-      const isInFiltered =
-        newFilter === 'all' ||
-        (newFilter === 'tagged' ? selectedVideo.isTagged : !selectedVideo.isTagged);
-      if (!isInFiltered) {
-        setSelectedVideo(null);
-      }
-    }
-  }, [selectedVideo]);
+  // Initial fetch and polling for now playing
+  useEffect(() => {
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchNowPlaying]);
 
-  const handleSave = useCallback(async (videoId: string, metadata: VideoMetadata) => {
-    try {
-      const updatedVideo = await saveVideoMetadata(videoId, metadata);
+  // Calculate stats
+  const taggedCount = videos.filter((v) => v.isTagged).length;
+  const untaggedCount = videos.filter((v) => !v.isTagged).length;
+  const totalCount = videos.length;
+  const progressPercent = totalCount > 0 ? Math.round((taggedCount / totalCount) * 100) : 0;
 
-      // Update video in list
-      setVideos((prev) =>
-        prev.map((v) => (v.id === videoId ? updatedVideo : v))
-      );
-
-      // Update selected video
-      setSelectedVideo(updatedVideo);
-
-      // Show success toast
-      showSuccess(`Saved: ${metadata.title}`);
-    } catch (err) {
-      // Show error toast with user-friendly message
-      let errorMessage = 'Save failed';
-      if (err instanceof ApiError) {
-        errorMessage = `Save failed: ${err.details || err.message}`;
-      } else if (err instanceof TypeError) {
-        errorMessage = 'Save failed: Could not connect to server';
-      } else if (err instanceof Error) {
-        errorMessage = `Save failed: ${err.message}`;
-      }
-
-      showError(errorMessage);
-
-      // Re-throw to let form know save failed (keeps form state)
-      throw err;
-    }
-  }, [showSuccess, showError]);
-
-  // Handle Now Playing selection - find video by ID and select it
-  const handleNowPlayingSelect = useCallback((videoId: string) => {
-    const video = videos.find((v) => v.id === videoId);
-    if (video) {
-      setSelectedVideo(video);
-      // Also switch filter to 'all' if the video wouldn't be visible
-      const isInFiltered =
-        filter === 'all' ||
-        (filter === 'tagged' ? video.isTagged : !video.isTagged);
-      if (!isInFiltered) {
-        setFilter('all');
-      }
-    }
-  }, [videos, filter]);
+  // Check if something is playing
+  const hasNowPlaying = nowPlaying !== null && !isNowPlayingLoading;
 
   return (
     <main className={styles.main}>
-      <section className={styles.leftPanel}>
-        <div className={styles.panelHeaderRow}>
-          <h2 className={styles.panelHeader}>Videos</h2>
-          <Link href="/upload" className={styles.addButton}>
-            + Add Video
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.logo}>Family Videos</div>
+      </header>
+
+      {/* Welcome Message */}
+      <section className={styles.welcome}>
+        <h1 className={styles.greeting}>Hola Santiago y Armida!</h1>
+        <p className={styles.subtitle}>Let's preserve some memories today</p>
+      </section>
+
+      {/* Now Playing Section - Hero when active */}
+      {hasNowPlaying && (
+        <section className={styles.nowPlayingSection}>
+          <div className={styles.nowPlayingLabel}>Now Playing</div>
+          <div className={styles.nowPlayingCard}>
+            {nowPlaying.thumbnailUrl && (
+              <img
+                src={buildThumbnailUrl(nowPlaying.thumbnailUrl)}
+                alt=""
+                className={styles.nowPlayingThumbnail}
+              />
+            )}
+            <div className={styles.nowPlayingInfo}>
+              <h2 className={styles.nowPlayingTitle}>{nowPlaying.name}</h2>
+              {nowPlaying.deviceName && (
+                <p className={styles.nowPlayingDevice}>
+                  Playing on: {nowPlaying.deviceName}
+                </p>
+              )}
+            </div>
+            <Link
+              href={`/videos?select=${nowPlaying.id}`}
+              className={styles.tagButton}
+            >
+              Tag This Video
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* Start Watching Section - Only show when nothing is playing */}
+      {!hasNowPlaying && !isNowPlayingLoading && (
+        <section className={styles.startWatchingSection}>
+          <h2 className={styles.sectionTitle}>Start Watching</h2>
+          <div className={styles.startWatchingCard}>
+            <div className={styles.steps}>
+              <div className={styles.step}>
+                <span className={styles.stepNumber}>1</span>
+                <span className={styles.stepText}>Open Jellyfin on your TV</span>
+              </div>
+              <div className={styles.step}>
+                <span className={styles.stepNumber}>2</span>
+                <span className={styles.stepText}>Pick a video from Home Videos</span>
+              </div>
+              <div className={styles.step}>
+                <span className={styles.stepNumber}>3</span>
+                <span className={styles.stepText}>Come back here to tag it!</span>
+              </div>
+            </div>
+            {jellyfinUrl && (
+              <a
+                href={jellyfinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.jellyfinButton}
+              >
+                Open Jellyfin
+                <span className={styles.externalIcon} aria-hidden="true">&#8599;</span>
+              </a>
+            )}
+            <div className={styles.divider}>
+              <span>or</span>
+            </div>
+            <Link href="/videos" className={styles.browseButton}>
+              Browse Videos to Tag
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* Progress Section */}
+      <section className={styles.progressSection}>
+        <h2 className={styles.sectionTitle}>Your Progress</h2>
+        <div className={styles.progressCard}>
+          {isLoading ? (
+            <div className={styles.loadingText}>Loading...</div>
+          ) : error ? (
+            <div className={styles.errorText}>{error}</div>
+          ) : (
+            <>
+              <div className={styles.statsRow}>
+                <div className={styles.statBlock}>
+                  <span className={styles.statNumber}>{untaggedCount}</span>
+                  <span className={styles.statLabel}>videos ready to tag</span>
+                </div>
+                <div className={styles.statBlock}>
+                  <span className={styles.statNumber}>{taggedCount}</span>
+                  <span className={styles.statLabel}>tagged</span>
+                </div>
+              </div>
+              <div className={styles.progressBarContainer}>
+                <div
+                  className={styles.progressBar}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className={styles.progressPercent}>{progressPercent}% complete</div>
+              <Link href="/videos" className={styles.browseVideosButton}>
+                Browse Videos
+              </Link>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Upload Section */}
+      <section className={styles.uploadSection}>
+        <h2 className={styles.sectionTitle}>Add New Videos</h2>
+        <div className={styles.uploadCard}>
+          <p className={styles.uploadText}>
+            Have DVDs to add to the collection?
+          </p>
+          <Link href="/upload" className={styles.uploadButton}>
+            Upload Videos
           </Link>
         </div>
-        <div className={styles.panelContent}>
-          <div className={styles.videoListWrapper}>
-            <NowPlaying onSelect={handleNowPlayingSelect} />
-            <VideoList
-              videos={filteredVideos}
-              selectedVideoId={selectedVideo?.id ?? null}
-              onVideoSelect={handleVideoSelect}
-              isLoading={isLoading}
-              error={error}
-              emptyMessage={
-                filter === 'untagged'
-                  ? 'All videos have been tagged!'
-                  : filter === 'tagged'
-                    ? 'No tagged videos yet'
-                    : 'No videos found in library'
-              }
-            />
-            {!isLoading && !error && (
-              <FilterDropdown value={filter} onChange={handleFilterChange} />
-            )}
-          </div>
-        </div>
-        {!isLoading && !error && totalCount > 0 && (
-          <div className={styles.progressCounter}>
-            Tagged: {taggedCount} / {totalCount}
-          </div>
-        )}
       </section>
-
-      <section className={styles.rightPanel}>
-        <h2 className={styles.panelHeader}>Tagging Form</h2>
-        <div className={styles.panelContent}>
-          <TaggingForm
-            video={selectedVideo}
-            jellyfinUrl={jellyfinUrl}
-            onSave={handleSave}
-            existingMetadata={existingMetadata}
-            isLoading={isLoadingMetadata}
-          />
-        </div>
-      </section>
-
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </main>
   );
 }

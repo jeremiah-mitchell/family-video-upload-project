@@ -26,6 +26,8 @@ export interface NowPlayingVideo {
   name: string;
   /** Optional thumbnail URL */
   thumbnailUrl?: string;
+  /** Name of the device playing the video */
+  deviceName?: string;
 }
 
 /**
