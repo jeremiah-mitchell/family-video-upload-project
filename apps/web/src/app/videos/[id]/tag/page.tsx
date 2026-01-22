@@ -26,6 +26,18 @@ export default function TagVideoPage() {
 
   const { toasts, dismissToast, showSuccess, showError } = useToasts();
 
+  // Load lastSavedMetadata from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lastSavedMetadata');
+      if (stored) {
+        setLastSavedMetadata(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.warn('Failed to load lastSavedMetadata from localStorage:', err);
+    }
+  }, []);
+
   // Fetch video and config on mount
   useEffect(() => {
     async function init() {
@@ -68,16 +80,10 @@ export default function TagVideoPage() {
     init();
   }, [videoId]);
 
-  // Load existing metadata when video is found
+  // Load existing metadata when video is found (always try, in case NFO exists)
   useEffect(() => {
     async function loadMetadata() {
       if (!video) {
-        setExistingMetadata(null);
-        return;
-      }
-
-      // Only load metadata if the video is tagged
-      if (!video.isTagged) {
         setExistingMetadata(null);
         return;
       }
@@ -87,7 +93,10 @@ export default function TagVideoPage() {
         const metadata = await getVideoMetadata(video.id);
         setExistingMetadata(metadata);
       } catch (err) {
-        console.warn('Failed to load metadata:', err);
+        // 404 is expected for videos without metadata - don't warn
+        if (!(err instanceof ApiError && err.status === 404)) {
+          console.warn('Failed to load metadata:', err);
+        }
         setExistingMetadata(null);
       } finally {
         setIsLoadingMetadata(false);
@@ -95,7 +104,7 @@ export default function TagVideoPage() {
     }
 
     loadMetadata();
-  }, [video?.id, video?.isTagged]);
+  }, [video?.id]);
 
   const handleSave = useCallback(async (vid: string, metadata: VideoMetadata) => {
     try {
@@ -109,20 +118,21 @@ export default function TagVideoPage() {
       // Update current video
       setVideo(updatedVideo);
 
-      // Store last saved metadata for "Copy from Previous" feature
+      // Store last saved metadata for "Copy from Previous" feature (in state and localStorage)
       setLastSavedMetadata(metadata);
+      try {
+        localStorage.setItem('lastSavedMetadata', JSON.stringify(metadata));
+      } catch (err) {
+        console.warn('Failed to save lastSavedMetadata to localStorage:', err);
+      }
 
       // Show success toast
       showSuccess(`Saved: ${metadata.title}`);
 
-      // Find next untagged video and navigate to it
-      const untaggedVideos = allVideos.filter((v) => !v.isTagged && v.id !== vid);
-      if (untaggedVideos.length > 0) {
-        // Small delay so user sees the success toast
-        setTimeout(() => {
-          router.push(`/videos/${untaggedVideos[0].id}/tag`);
-        }, 800);
-      }
+      // Navigate back to home after a short delay so user sees the success toast
+      setTimeout(() => {
+        router.push('/');
+      }, 800);
     } catch (err) {
       let errorMessage = 'Save failed';
       if (err instanceof ApiError) {
@@ -136,7 +146,7 @@ export default function TagVideoPage() {
       showError(errorMessage);
       throw err;
     }
-  }, [allVideos, router, showSuccess, showError]);
+  }, [router, showSuccess, showError]);
 
   // Calculate stats
   const untaggedCount = allVideos.filter((v) => !v.isTagged).length;
