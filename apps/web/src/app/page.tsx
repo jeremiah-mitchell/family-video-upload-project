@@ -159,23 +159,22 @@ export default function Home() {
                 <span className={styles.stepText}>Come back here to tag it!</span>
               </div>
             </div>
-            <div className={styles.divider}>
-              <span>No TV?</span>
-            </div>
             {jellyfinUrl && (
-              <a
-                href={jellyfinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.webBrowserLink}
-              >
-                Watch in your web browser
-                <span className={styles.externalIcon} aria-hidden="true">&#8599;</span>
-              </a>
+              <>
+                <div className={styles.divider}>
+                  <span>No TV?</span>
+                </div>
+                <a
+                  href={jellyfinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.webBrowserLink}
+                >
+                  Watch in your web browser
+                  <span className={styles.externalIcon} aria-hidden="true">&#8599;</span>
+                </a>
+              </>
             )}
-            <Link href="/videos" className={styles.browseButton}>
-              Browse Videos to Tag
-            </Link>
           </div>
         </section>
       )}
